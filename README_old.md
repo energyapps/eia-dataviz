@@ -1,33 +1,43 @@
 ## About
 
-This is a repository for data visualizations created with EIA data to support #TodayInEnergy and report releases such as the [Short Term Energy Outlook](https://www.eia.gov/outlooks/steo/).
+This is a codebase that will allow energy.gov users to quickly get started developing new graphics and maps. By cloning this repo, you can immediately begin coding.
 
 The contents of this page are in the Public Domain
 
 ## Dependencies
 - Git (_[tutorial](https://try.github.io/)_)
-- Download and install [Jekyll](http://jekyllrb.com/). [Jekyll Documentation](https://jekyllrb.com/docs/home/) and specific documentation about [Jekyll and Github Pages](https://jekyllrb.com/docs/github-pages/).
+- Download and install [Jekyll](sudo). [Jekyll Documentation](https://jekyllrb.com/docs/home/) and specific documentation about [Jekyll and Github Pages](https://jekyllrb.com/docs/github-pages/).
 - [Pym.js](http://blog.apps.npr.org/pym.js/) is used for making fully responsive iframes.
+- [Foundation CSS](http://foundation.zurb.com/sites.html) is often used but not required.
 
 ## Setup
 
-- Before Getting started, ensure that Jekyll is installed on your computer. (And read up on the directory structure on their site and below).
+- Before Getting started, create a new repo in the [EnergyApps Github group](https://github.com/energyapps) named whatever you want.
+
+- Ensure that Jekyll is installed on your computer. (And read up on the directory structure on their site and below).
 
 - In your local git projects directory do the following:
 
 ```shell
-$ git clone https://github.com/energyapps/eia-dataviz.git #clone the app frame repo
+$ git clone https://github.com/energyapps/app_frame.git #clone the app frame repo
+$ mv app_frame/ new_directory_name/ #Rename the app frame folder to your new project name
+$ cd new_directory_name/
+$ git remote set-url origin https://github.com/energyapps/NEW-REPO-NAME.git #changes the remote url to your new URL
+$ git push -u origin master #Push to this new repo
+$ git branch gh-pages #Branch out the gh-pages branch
 $ git checkout gh-pages
 $ git push origin gh-pages #Push updates to gh-pages
 ```
 
-<!-- ## Building your graphic
+- At this point you may want to go into your repo on github and change the "default branch" to gh-pages in the settings. The gh-pages repo is like the "production server". Whatever is in this repo is what is served over `https://energyapps.github.io/NEW-REPO-NAME`.
+
+## Building your graphic
 
 - Build the Jekyll `_site/` folder by running `jekyll build` in your directory. I recommend running `jekyll build --watch`, which automatically rebuilds your `_site` folder whenever you change something in the repository. More on this [on jekyll's website](https://jekyllrb.com/docs/usage/).
 - Run the jekyll server by running `jekyll serve`. You can now see your page at http://localhost:4000/
 - Begin work in the `index.html` file, `style.css` file, and `script.js` file. Add/remove javascript libraries and referenced css files in `_layout/default.html`.
 - Push changes to github, see website running remotely at `https://energyapps.github.io/NEW-REPO-NAME/`. The site is now deployed on energyapps.github.io
-- Recommended: Update README.md to reflect your current project. -->
+- Recommended: Update README.md to reflect your current project.
 
 ## Deploying your graphic on energy.gov
 
@@ -98,7 +108,7 @@ To get an in-depth look at the directory structure of a general [jekyll site go 
 
 ## Notes
 
-<!-- - used to use Foundation CSS a lot, so you may want to understand how that works.
+- used to use Foundation CSS a lot, so you may want to understand how that works.
 - needs, update the styles to be current with the new css.
 - Crowbar for D3
-- http://meethyde.com/ could be useful in the future for something. -->
+- http://meethyde.com/ could be useful in the future for something.
