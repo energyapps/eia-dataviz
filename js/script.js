@@ -22,20 +22,21 @@ $( document ).ready( function () {
 	}
 
 	/* TABLETOP.JS: LOADING DATA */
+
 	// Google sheets ID
-	var public_spreadsheet_url = '1lWN0rt2LLa43iC2hmPnTMouiUFkba9zcQtWwRkfNnXQ'; // summer fuels + disposable income
+	var public_spreadsheet_url = '1lJTxKh2F98tEuCeHnlJsVAl1FgEx5nkEwuvAfUlTUFU'; // summer fuels + disposable income
 
 	// function for initializing tabletop
 	function loadSpreadsheet() {
-		// Multisheet version:
+		// STEO + summer fuels data
 		Tabletop.init( {
 			key: public_spreadsheet_url,
 			callback: showInfo,
-			wanted: [ "annual_summer_fuel_avg", "monthly_fuel_avg" ], // specify sheets to load
+			wanted: [ "wind_over_hydro", "record_crude_prod", "dom_crude_prod", "record_ng_prod", "ng_exp_by_type", "lng_exp_by_country", "monthly_fuel_price", "annual_summer_fuel_avg", "monthly_disp_income", "summer_disp_income" ], // specify sheets to load
 			parseNumbers: true,
 			postProcess: function ( element ) {
 				// format date string
-				element[ "launch_date" ] = Date.parse( element[ "launch_date" ] );
+				element[ "year" ] = Date.parse( element[ "year" ] );
 			}
 			// , debug: true
 		} )
@@ -44,23 +45,122 @@ $( document ).ready( function () {
 	// load spreadsheet data
 	loadSpreadsheet();
 
-	/* Create a function to dump variable arrays */
-	/*function dump( obj ) {
-		var out = '';
-		for ( var i in obj ) {
-			out += i + ": " + obj[ i ] + "\n";
-		}
-		document.write( out[ i ] );
-	}
-*/
 	/* D3 data output */
 	function showInfo( data ) {
-		console.log( "Spreadsheet data is loaded." );
+		// get current date and extract year
+		var today = new Date(),
+			currYear = today.getFullYear();
 
-		/* LOAD DATA INTO VARIABLE */
+		console.log( "Spreadsheet data is loaded.", today.toJSON() );
+		// console.log( data.wind_over_hydro );
+
+		/****
+		 LOAD DATA INTO VARIABLES
+		****/
+
+		/* WIND OVER HYDRO */
+		// load wind sheet into variable
+		var windData = data.wind_over_hydro.elements;
+		// console.table( windData );
+
+		// loop through array of data
+		for ( var w = 0; w < windData.length; w++ ) {
+			// parse date to year
+			var wDate = new Date( windData[ w ].year );
+			windData[ w ].year = wDate.getUTCFullYear();
+			// console.log( windData[ w ].year );
+			/*// populate individual arrays for each variable
+			windYr.push( windData[ w ].year );
+			windCap.push( windData[ w ][ "Wind Net Summer Capacity" ] );
+			hydroCap.push( windData[ w ][ "Conventional Hydroelectric Net Summer Capacity" ] );
+			// populate array for all summer capacity
+			allCap.push( windData[ w ][ "Conventional Hydroelectric Net Summer Capacity" ] );
+			allCap.push( windData[ w ][ "Wind Net Summer Capacity" ] );*/
+		}
+
+		// X AXIS SCALE
+		var minYear = d3.min( windData, function ( wd ) {
+				return wd.year;
+			} ),
+			maxYear = d3.max( windData, function ( wd ) {
+				return wd.year;
+			} ),
+			windX = d3.scaleTime().domain( [ minYear, maxYear ] );
+
+		// Y AXIS SCALE
+		var minY = d3.min( windData, function ( wd ) {
+				return wd[ "Wind Net Summer Capacity" ];
+			} ),
+			// set min to min summer capacity value divided by 2 rounded to the nearest 100
+			minY = Math.floor( ( minY / 2 ) / 100 ) * 100,
+			maxY = d3.max( windData, function ( wd ) {
+				return wd[ "Wind Net Summer Capacity" ];
+			} ),
+			// set max to max summer capacity value times 1.2 rounded to the nearest 100
+			maxY = Math.ceil( ( maxY * 1.2 ) / 100 ) * 100,
+			// set Y axis scale
+			windY = d3.scaleLinear().domain( [ minY, maxY ] ) /*.range( [ 0 + windMargin, windHeight - windMargin ] )*/ ;
+
+		var windRecord = d3.select( "#wind-over-hydro" ),
+			/*windMargin = {
+				top: 20,
+				right: 20,
+				bottom: 30,
+				left: 50
+			},*/
+			windWidth = 600 /*+windRecord.attr( "width" ) -windMargin.left - windMargin.right*/ ,
+			windHeight = 400 /*+windRecord.attr( "height" ) -windMargin.top - windMargin.bottom,*/
+		g = windRecord.append( "svg:svg" )
+			.attr( "width", windWidth )
+			.attr( "height", windHeight )
+			.append( "svg:g" )
+		/*.attr( "transform", "translate(" + windMargin.left + "," + windMargin.top + ")" )*/
+		;
+
+		// create wind capacity line
+		var windLine = d3.line()
+			.x( function ( d ) {
+				return windX( d.year );
+			} )
+			.y( function ( d ) {
+				return windY( d[ "Wind Net Summer Capacity" ] );
+			} );
+
+		g.append( "path" )
+			.datum( windData )
+			.attr( "fill", "none" )
+			.attr( "stroke", "steelblue" )
+			.attr( "stroke-linejoin", "round" )
+			.attr( "stroke-linecap", "round" )
+			.attr( "stroke-width", 1.5 )
+			.attr( "d", windLine );
+
+		// g.append( "g" )
+		// 	// .attr( "transform", "translate(0," + windHeight + ")" )
+		// 	.call( d3.axisBottom( windX ) )
+		// /*
+		// 			.select( ".domain" )*/
+		// ;
+
+		// g.append( "g" )
+		// 	.call( d3.axisLeft( windY ) )
+
+		// 			.append( "text" )
+		// 			.attr( "fill", "#000" )
+		// 			.attr( "transform", "rotate(-90)" )
+		// 			.attr( "y", 6 )
+		// 			.attr( "dy", "0.71em" )
+		// 			.attr( "text-anchor", "end" )
+		// 			.text( "Price ($)" )
+		// ;
+
+		//
+		//
+		//
+		//
 		// create variables for averages
 		var yearAvg = data.annual_summer_fuel_avg.elements,
-			monthAvgAll = data.monthly_fuel_avg.elements,
+			monthAvgAll = data.monthly_fuel_price.elements,
 			monthAvgSummer = [];
 
 		// loop through all months and filter summer months only
@@ -75,12 +175,7 @@ $( document ).ready( function () {
 				} )
 			}
 		}
-		console.log( monthAvgSummer /*[ 0 ].month - 1*/ );
-
-		// get current date and extract year
-		var today = new Date(),
-			currYear = today.getFullYear();
-		// 	prevYear = currYear - 1;
+		// console.log( monthAvgSummer /*[ 0 ].month - 1*/ );
 
 		// // create variables for followers column name
 		// var oldFoll = "followers_" + ( prevYear - 1 ),
@@ -111,41 +206,5 @@ $( document ).ready( function () {
 		// 	infoObj[ "handle" ] = doeStats[ i ][ "handle" ]; // equate account handle
 		// 	infoObj[ "url" ] = doeStats[ i ][ "url" ]; // equate profile url
 		// 	platformInfo.push( infoObj ); // push to new account-only array
-	}
-
-	var svg = d3.select( "svg" ),
-		margin = {
-			top: 250,
-			right: 40,
-			bottom: 250,
-			left: 40
-		},
-		width = svg.attr( "width" ) - margin.left - margin.right,
-		height = svg.attr( "height" ) - margin.top - margin.bottom;
-
-	var locale = d3.timeFormatLocale( {
-		"dateTime": "%A, %e %b %Y",
-		"date": "%m %Y",
-		"months": [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ],
-		"shortMonths": [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" ]
-	} );
-
-	var formatMonth = locale.format( "%B" ),
-		formatYear = locale.format( "%Y" );
-
-	var x = d3.scaleTime()
-		.domain( [ new Date( 1990, 0, 1 ), new Date( 2018, 12, 1 ) ] )
-		.range( [ 0, width ] );
-
-	svg.append( "g" )
-		.attr( "transform", "translate(" + margin.left + "," + margin.top + ")" )
-		.call( d3.axisBottom( x )
-			.tickFormat( multiFormat ) );
-
-	function multiFormat( date ) {
-		return (
-			d3.timeMonth( date ) < date ? ( d3.timeWeek( date ) < date ? formatDay : formatWeek ) :
-			d3.timeYear( date ) < date ? formatMonth :
-			formatYear )( date );
 	}
 } );
