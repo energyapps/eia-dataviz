@@ -32,8 +32,10 @@ $( document ).ready( function () {
 		Tabletop.init( {
 			key: public_spreadsheet_url,
 			callback: showInfo,
-			wanted: [ "wind_over_hydro", "record_crude_prod", "dom_crude_prod", "record_ng_prod", "ng_exp_by_type", "lng_exp_by_country", "monthly_fuel_price", "annual_summer_fuel_avg", "monthly_disp_income", "summer_disp_income" ], // specify sheets to load
+			wanted: [ "wind_over_hydro_cap", "wind_over_hydro_gen", "record_crude_prod", "dom_crude_prod", "record_ng_prod", "ng_exp_by_type", "lng_exp_by_country", "monthly_fuel_price", "annual_summer_fuel_avg", "monthly_disp_income", "summer_disp_income" ], // specify sheets to load
 			parseNumbers: true,
+			orderby: "year",
+			reverse: true,
 			postProcess: function ( element ) {
 				// format date string
 				element[ "year" ] = Date.parse( element[ "year" ] );
@@ -60,7 +62,7 @@ $( document ).ready( function () {
 
 		/* WIND OVER HYDRO */
 		// load wind sheet into variable
-		var windData = data.wind_over_hydro.elements;
+		var windData = data.wind_over_hydro_cap.elements;
 		// console.table( windData );
 
 		// loop through array of data
@@ -69,90 +71,84 @@ $( document ).ready( function () {
 			var wDate = new Date( windData[ w ].year );
 			windData[ w ].year = wDate.getUTCFullYear();
 			// console.log( windData[ w ].year );
-			/*// populate individual arrays for each variable
-			windYr.push( windData[ w ].year );
-			windCap.push( windData[ w ][ "Wind Net Summer Capacity" ] );
-			hydroCap.push( windData[ w ][ "Conventional Hydroelectric Net Summer Capacity" ] );
-			// populate array for all summer capacity
-			allCap.push( windData[ w ][ "Conventional Hydroelectric Net Summer Capacity" ] );
-			allCap.push( windData[ w ][ "Wind Net Summer Capacity" ] );*/
 		}
 
-		// X AXIS SCALE
-		var minYear = d3.min( windData, function ( wd ) {
-				return wd.year;
-			} ),
-			maxYear = d3.max( windData, function ( wd ) {
-				return wd.year;
-			} ),
-			windX = d3.scaleTime().domain( [ minYear, maxYear ] );
+		// create a variable to parse year with D3
+		var parseYear = d3.timeParse( "%Y" );
 
-		// Y AXIS SCALE
-		var minY = d3.min( windData, function ( wd ) {
-				return wd[ "Wind Net Summer Capacity" ];
-			} ),
-			// set min to min summer capacity value divided by 2 rounded to the nearest 100
-			minY = Math.floor( ( minY / 2 ) / 100 ) * 100,
-			maxY = d3.max( windData, function ( wd ) {
-				return wd[ "Wind Net Summer Capacity" ];
-			} ),
-			// set max to max summer capacity value times 1.2 rounded to the nearest 100
-			maxY = Math.ceil( ( maxY * 1.2 ) / 100 ) * 100,
-			// set Y axis scale
-			windY = d3.scaleLinear().domain( [ minY, maxY ] ) /*.range( [ 0 + windMargin, windHeight - windMargin ] )*/ ;
+		// get chart container dimensions + set universal margins
+		var contWidth = $( "#wind-over-hydro" ).width(),
+			contHeight = $( "#wind-over-hydro" ).height(),
+			chartMargins = {
+				top: 200,
+				right: 70,
+				bottom: 100,
+				left: 70
+			}
+		/*console.log( "W: ", contWidth, "H: ", contHeight );
+		console.log( d3.extent( windData, function ( d ) {
+			return d[ "Wind Net Summer Capacity" ];
+		} ) );*/
 
+		// select container div and create svg + g elements within
 		var windRecord = d3.select( "#wind-over-hydro" ),
-			/*windMargin = {
-				top: 20,
-				right: 20,
-				bottom: 30,
-				left: 50
-			},*/
-			windWidth = 600 /*+windRecord.attr( "width" ) -windMargin.left - windMargin.right*/ ,
-			windHeight = 400 /*+windRecord.attr( "height" ) -windMargin.top - windMargin.bottom,*/
-		g = windRecord.append( "svg:svg" )
+			windWidth = contWidth * 0.65,
+			windHeight = 0 + chartMargins.top + chartMargins.bottom,
+			g = windRecord.append( "svg:svg" )
 			.attr( "width", windWidth )
 			.attr( "height", windHeight )
 			.append( "svg:g" )
-		/*.attr( "transform", "translate(" + windMargin.left + "," + windMargin.top + ")" )*/
-		;
+			.attr( "transform", "translate(" + chartMargins.left + "," + chartMargins.top + ")" );
+
+		// X AXIS
+		var windX = d3.scaleTime()
+			.domain( d3.extent( windData, function ( d ) {
+				return parseYear( d.year );
+			} ) )
+			.range( [ 0, windWidth ] ),
+			xAxis = d3.axisBottom( windX );
+
+		// Y AXIS
+		var windY = d3.scaleLinear()
+			.domain( d3.extent( windData, function ( d ) {
+				return d[ "Wind Net Summer Capacity" ];
+			} ) )
+			.range( [ windHeight, 0 ] ),
+			yAxis = d3.axisLeft( windY );
 
 		// create wind capacity line
 		var windLine = d3.line()
 			.x( function ( d ) {
-				return windX( d.year );
+				// console.log( parseYear( d.year ) );
+				return windX( parseYear( d.year ) );
 			} )
 			.y( function ( d ) {
+				// console.log( d[ "Wind Net Summer Capacity" ] );
 				return windY( d[ "Wind Net Summer Capacity" ] );
 			} );
 
+		g.append( "g" )
+			.attr( "transform", "translate(0, " + windHeight + ")" )
+			.call( xAxis )
+			.select( ".domain" );
+
+		g.append( "g" )
+			.call( yAxis )
+			.select( ".domain" )
+		// .attr( "transform", "translate(" + chartMargins.left + ", 0)" )
+		/*.append( "text" )
+		.attr( "fill", "#000" )
+		.attr( "transform", "rotate(-90)" )
+		.attr( "y", 6 )
+		.attr( "dy", "0.71em" )
+		.attr( "text-anchor", "end" )
+		.text( "Price ($)" )*/
+		;
+
 		g.append( "path" )
 			.datum( windData )
-			.attr( "fill", "none" )
-			.attr( "stroke", "steelblue" )
-			.attr( "stroke-linejoin", "round" )
-			.attr( "stroke-linecap", "round" )
-			.attr( "stroke-width", 1.5 )
+			.attr( "class", "line" )
 			.attr( "d", windLine );
-
-		// g.append( "g" )
-		// 	// .attr( "transform", "translate(0," + windHeight + ")" )
-		// 	.call( d3.axisBottom( windX ) )
-		// /*
-		// 			.select( ".domain" )*/
-		// ;
-
-		// g.append( "g" )
-		// 	.call( d3.axisLeft( windY ) )
-
-		// 			.append( "text" )
-		// 			.attr( "fill", "#000" )
-		// 			.attr( "transform", "rotate(-90)" )
-		// 			.attr( "y", 6 )
-		// 			.attr( "dy", "0.71em" )
-		// 			.attr( "text-anchor", "end" )
-		// 			.text( "Price ($)" )
-		// ;
 
 		//
 		//
