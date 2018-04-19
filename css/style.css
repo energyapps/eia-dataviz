@@ -30,11 +30,22 @@ svg {
 }
 
 path {
-	fill: "none";
-	stroke: "steelblue";
-	stroke-width: 1.5;
+	fill: none;
+	stroke-width: 2;
 	stroke-linejoin: round;
 	stroke-linecap: round;
+}
+
+.domain {
+	stroke: none;
+}
+
+.line-blue {
+	stroke: steelblue;
+}
+
+.line-green {
+	stroke: darkgreen;
 }
 
 /*+++++++++++++++++++++++++++
