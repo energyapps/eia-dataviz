@@ -1,4 +1,8 @@
-name: "APP"
-description: "Prototyper for Energy.gov"
+# File: _config.yml
+name: "EIA STEO"
+description: "Collection of charts based on EIA’s STEO for Energy.gov"
 url: "http://localhost:4000"
 permalink: pretty
+webrick:
+  headers:
+    My-Header: "EIA STEO"
