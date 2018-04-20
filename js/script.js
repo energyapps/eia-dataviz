@@ -9,7 +9,7 @@ var pymChild = new pym.Child();
 	Do not remove above!
 ***********/
 
-$( document ).ready( function() {
+$( document ).ready( function () {
 	console.log( "Page loaded. Jquery is running. Now, do stuff." );
 
 	// get current date and extract year
@@ -21,8 +21,15 @@ $( document ).ready( function() {
 		console.log( "it's summer", currMonth, currYear );
 	}
 
-	/* TABLETOP.JS: LOADING DATA */
+	// set universal chart margins
+	var chartMargins = {
+		top: 50,
+		right: 70,
+		bottom: 50,
+		left: 70
+	}
 
+	/* TABLETOP.JS: LOAD DATA */
 	// Google sheets ID
 	var public_spreadsheet_url = '1lJTxKh2F98tEuCeHnlJsVAl1FgEx5nkEwuvAfUlTUFU'; // summer fuels + disposable income
 
@@ -36,7 +43,7 @@ $( document ).ready( function() {
 			parseNumbers: true,
 			orderby: "year",
 			reverse: true,
-			postProcess: function( element ) {
+			postProcess: function ( element ) {
 				// format date string
 				element[ "year" ] = Date.parse( element[ "year" ] );
 			}
@@ -44,64 +51,67 @@ $( document ).ready( function() {
 		} )
 	}
 
-	// load spreadsheet data
+	// run function to load spreadsheet data
 	loadSpreadsheet();
 
-	/* D3 data output */
+	/* D3 data output to charts */
 	function showInfo( data ) {
 		// get current date and extract year
 		var today = new Date(),
 			currYear = today.getFullYear();
 
 		console.log( "Spreadsheet data is loaded.", today.toJSON() );
-		// console.log( data.wind_over_hydro );
 
 		/****
 		 LOAD DATA INTO VARIABLES
 		****/
 
-		/* WIND OVER HYDRO */
 		// load wind sheet into variable
-		var windHydroData = data.wind_over_hydro_cap.elements;
-		// console.table( windHydroData );
+		var windHydroCapData = data.wind_over_hydro_cap.elements;
+		var windHydroGenData = data.wind_over_hydro_gen.elements;
+		// console.table( windHydroGenData );
 
-		// loop through array of data
-		for ( var w = 0; w < windHydroData.length; w++ ) {
+		/****
+		 CHART #1: Wind vs. Hydro Net Summer Capacity
+		****/
+		// loop through array of capacity data
+		for ( var w = 0; w < windHydroCapData.length; w++ ) {
 			// parse date to year
-			var wDate = new Date( windHydroData[ w ].year );
-			windHydroData[ w ].year = wDate.getUTCFullYear();
-			// console.log( windHydroData[ w ].year );
+			var wDate = new Date( windHydroCapData[ w ].year );
+			windHydroCapData[ w ].year = wDate.getUTCFullYear();
+			// console.log( windHydroCapData[ w ].year );
 		}
 
 		// create a variable to parse year with D3
 		var parseYear = d3.timeParse( "%Y" );
 
 		// get chart container dimensions + set universal margins
-		var contWidth = $( "#wind-over-hydro" ).width(),
-			contHeight = $( "#wind-over-hydro" ).height(),
-			chartMargins = {
-				top: 50,
-				right: 70,
-				bottom: 50,
-				left: 70
-			}
+		var contWidth = $( "#wind-over-hydro-cap" ).width(),
+			contHeight = $( "#wind-over-hydro-cap" ).height();
 
 		// select container div + create SVG and main g elements within
-		var windRecord = d3.select( "#wind-over-hydro" ),
+		var windRecord = d3.select( "#wind-over-hydro-cap" ),
 			windWidth = contWidth * 0.65,
 			windHeight = 0 + ( chartMargins.top + chartMargins.bottom ) * 2,
 			// create SVG viewport
 			g = windRecord.append( "svg:svg" )
 			.attr( "width", windWidth )
 			.attr( "height", windHeight )
-			.attr( "id", "wind-hydro-chart" )
+			.attr( "id", "wind-hydro-cap-chart" )
 			// create main g element container for the chart
 			.append( "svg:g" )
 			.attr( "transform", "translate(" + chartMargins.left + "," + chartMargins.top + ")" );
 
+		// add chart title
+		g.append( "svg:text" )
+			.attr( "x", chartMargins.left )
+			.attr( "y", 0 )
+			.attr( "class", "chart-title" )
+			.text( "Annual Net Summer Capacity from Selected Sources (2010–2018)" )
+
 		// X axis: scale + axis function variables
 		var windX = d3.scaleTime()
-			.domain( d3.extent( windHydroData, function( d ) {
+			.domain( d3.extent( windHydroCapData, function ( d ) {
 				return parseYear( d.year );
 			} ) )
 			.range( [ 0, windWidth ] ),
@@ -109,16 +119,16 @@ $( document ).ready( function() {
 
 		// Y axis: scale + axis function variables
 		var windY = d3.scaleLinear()
-			.domain( [ ( d3.min( windHydroData, function( d ) {
+			.domain( [ ( d3.min( windHydroCapData, function ( d ) {
 				return d[ "Wind Net Summer Capacity (megawatts)" ];
-			} ) / 2 ), ( d3.max( windHydroData, function( d ) {
+			} ) / 2 ), ( d3.max( windHydroCapData, function ( d ) {
 				return d[ "Wind Net Summer Capacity (megawatts)" ];
 			} ) * 1.1 ) ] )
 			.range( [ windHeight, 0 ] ),
 			yAxis = d3.axisRight( windY )
 			.tickSizeInner( windWidth + chartMargins.left )
 			.tickPadding( 6 )
-			.tickFormat( function( d ) {
+			.tickFormat( function ( d ) {
 				return ( d / 1000 + "k" );
 			} );
 
@@ -135,22 +145,22 @@ $( document ).ready( function() {
 
 		// create wind capacity line
 		var windLine = d3.line()
-			.x( function( d ) {
+			.x( function ( d ) {
 				// console.log( parseYear( d.year ) );
 				return windX( parseYear( d.year ) );
 			} )
-			.y( function( d ) {
+			.y( function ( d ) {
 				// console.log( d[ "Wind Net Summer Capacity (megawatts)" ] );
 				return windY( d[ "Wind Net Summer Capacity (megawatts)" ] );
 			} );
 
 		// create hydro capacity line
 		var hydroLine = d3.line()
-			.x( function( d ) {
+			.x( function ( d ) {
 				// console.log( parseYear( d.year ) );
 				return windX( parseYear( d.year ) );
 			} )
-			.y( function( d ) {
+			.y( function ( d ) {
 				// console.log( d[ "Conventional Hydroelectric Net Summer Capacity (megawatts)" ] );
 				return windY( d[ "Conventional Hydroelectric Net Summer Capacity (megawatts)" ] );
 			} );
@@ -170,13 +180,142 @@ $( document ).ready( function() {
 
 		// wind line element
 		g.append( "path" )
-			.datum( windHydroData )
+			.datum( windHydroCapData )
 			.attr( "d", windLine )
 			.attr( "class", "line-green" );
 
 		// hydro line element
 		g.append( "path" )
-			.datum( windHydroData )
+			.datum( windHydroCapData )
+			.attr( "d", hydroLine )
+			.attr( "class", "line-blue" );
+
+		/****
+		 CHART #2: Wind vs. Hydro Net Generation
+		****/
+		// loop through array of capacity data
+		for ( var w = 0; w < windHydroGenData.length; w++ ) {
+			// parse date to year
+			var wDate = new Date( windHydroGenData[ w ].year );
+			windHydroGenData[ w ].year = wDate.getUTCFullYear();
+		}
+
+		// console.table( windHydroGenData );
+		function concatData( d ) {
+			console.table( d );
+			/*var wh = Array.from( d ),
+				wh = wh.flatten();
+			console.log( wh );*/
+			/*for ( var i = 0; i < d.length; i++ ) {
+				console.log( d[ i ] );
+			}*/
+		}
+
+		concatData( windHydroGenData );
+
+		// create a variable to parse year with D3
+		var parseYear = d3.timeParse( "%Y" );
+
+		// get chart container dimensions + set universal margins
+		var contWidth = $( "#wind-over-hydro-gen" ).width(),
+			contHeight = $( "#wind-over-hydro-gen" ).height();
+
+		// select container div + create SVG and main g elements within
+		var windRecord = d3.select( "#wind-over-hydro-gen" ),
+			windWidth = contWidth * 0.65,
+			windHeight = 0 + ( chartMargins.top + chartMargins.bottom ) * 2,
+			// create SVG viewport
+			g = windRecord.append( "svg:svg" )
+			.attr( "width", windWidth )
+			.attr( "height", windHeight )
+			.attr( "id", "wind-hydro-chart" )
+			// create main g element container for the chart
+			.append( "svg:g" )
+			.attr( "transform", "translate(" + chartMargins.left + "," + chartMargins.top + ")" );
+
+		// add chart title
+		g.append( "svg:text" )
+			.attr( "x", chartMargins.left )
+			.attr( "y", 0 )
+			.attr( "class", "chart-title" )
+			.text( "Annual Net Energy Generation from Selected Sources (2010–2018)" )
+
+		// X axis: scale + axis function variables
+		var windX = d3.scaleTime()
+			.domain( d3.extent( windHydroGenData, function ( d ) {
+				return parseYear( d.year );
+			} ) )
+			.range( [ 0, windWidth ] ),
+			xAxis = d3.axisBottom( windX );
+
+		// Y axis: scale + axis function variables
+		var windY = d3.scaleLinear()
+			.domain( d3.extent( windHydroGenData, function ( d ) {
+				return d[ "Net wind generation (thousand megawatthours)" ];
+			} ) )
+			.range( [ windHeight, 0 ] ),
+			yAxis = d3.axisRight( windY )
+			.tickSizeInner( windWidth + chartMargins.left )
+			.tickPadding( 6 )
+			.tickFormat( function ( d ) {
+				return ( d / 1000 + "k" );
+			} );
+
+		// create custom function for Y axis
+		function customYAxis( g ) {
+			// move axis to align properly with the bottom left corner including tick values
+			g.attr( "transform", "translate(" + ( -chartMargins.left / 2 ) + ", 0)" )
+			g.call( yAxis );
+			g.select( ".domain" );
+			g.attr( "text-anchor", "end" );
+			g.selectAll( ".tick:not(:first-of-type) line" ).attr( "stroke", "#777" ).attr( "stroke-dasharray", "2,2" );
+			g.selectAll( ".tick text" ).attr( "x", -4 ).attr( "dy", 0 );
+		}
+
+		// create wind capacity line
+		var windLine = d3.line()
+			.x( function ( d ) {
+				// console.log( parseYear( d.year ) );
+				return windX( parseYear( d.year ) );
+			} )
+			.y( function ( d ) {
+				// console.log( d[ "Net wind generation (thousand megawatthours)" ] );
+				return windY( d[ "Net wind generation (thousand megawatthours)" ] );
+			} );
+
+		// create hydro capacity line
+		var hydroLine = d3.line()
+			.x( function ( d ) {
+				// console.log( parseYear( d.year ) );
+				return windX( parseYear( d.year ) );
+			} )
+			.y( function ( d ) {
+				// console.log( d[ "Net conventional hydroelectric generation (thousand megawatthours)" ] );
+				return windY( d[ "Net conventional hydroelectric generation (thousand megawatthours)" ] );
+			} );
+
+		/* append SVG group elements */
+		// X axis element: calls xAxis function
+		g.append( "g" )
+			.attr( "id", "wind-x-axis" )
+			.attr( "transform", "translate(0, " + windHeight + ")" )
+			.call( xAxis )
+			.select( ".domain" ).remove();
+
+		// Y axis element: calls yAxis function
+		g.append( "g" )
+			.attr( "id", "wind-y-axis" )
+			.call( customYAxis );
+
+		// wind line element
+		g.append( "path" )
+			.datum( windHydroGenData )
+			.attr( "d", windLine )
+			.attr( "class", "line-green" );
+
+		// hydro line element
+		g.append( "path" )
+			.datum( windHydroGenData )
 			.attr( "d", hydroLine )
 			.attr( "class", "line-blue" );
 
