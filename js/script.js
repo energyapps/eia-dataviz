@@ -193,25 +193,28 @@ $( document ).ready( function () {
 		/****
 		 CHART #2: Wind vs. Hydro Net Generation
 		****/
+
+		var w = [],
+			h = [];
+
 		// loop through array of capacity data
 		for ( var w = 0; w < windHydroGenData.length; w++ ) {
 			// parse date to year
 			var wDate = new Date( windHydroGenData[ w ].year );
 			windHydroGenData[ w ].year = wDate.getUTCFullYear();
+
+			w.push( windHydroGenData[ w ][ "Net conventional hydroelectric generation (thousand megawatthours)" ] );
+
+			h.push( windHydroGenData[ w ][ "Net wind generation (thousand megawatthours)" ] )
 		}
 
 		// console.table( windHydroGenData );
-		function concatData( d ) {
-			console.table( d );
-			/*var wh = Array.from( d ),
-				wh = wh.flatten();
-			console.log( wh );*/
-			/*for ( var i = 0; i < d.length; i++ ) {
-				console.log( d[ i ] );
-			}*/
-		}
+		// function concatData( d ) {
+		// console.table( d );
+		console.log( w, h );
+		// }
 
-		concatData( windHydroGenData );
+		// concatData( windHydroGenData );
 
 		// create a variable to parse year with D3
 		var parseYear = d3.timeParse( "%Y" );
