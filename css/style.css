@@ -37,15 +37,25 @@ path {
 	stroke-linecap: round;
 }
 
-.chart-title {
-	font-size: 14px;
+.domain {
+	stroke: none;
+}
+
+.titles_chart-main {
+	font-size: 1.2em;
 	/*text-anchor: middle;*/
 	/*text-decoration: underline;*/
 }
 
-.domain {
-	stroke: none;
+.titles_axis-y {
+	fill: black;
+	font-size: 1em;
+	text-anchor: middle;
 }
+
+.tooltip_value {}
+
+.tooltip_circle {}
 
 .line-blue {
 	stroke: steelblue;
