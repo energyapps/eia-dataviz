@@ -42,7 +42,7 @@ $( document ).ready( function () {
 		Tabletop.init( {
 			key: public_spreadsheet_url,
 			callback: showInfo,
-			wanted: [ "wind_over_hydro_cap", "wind_over_hydro_gen", "record_crude_prod", "dom_crude_prod", "record_ng_prod", "ng_exp_by_type", "lng_exp_by_country", "monthly_fuel_price", "annual_summer_fuel_avg", "monthly_disp_income", "summer_disp_income" ], // specify sheets to load
+			wanted: [ "wind_over_hydro_cap", "wind_over_hydro_gen", "all_exports_ng_exports_net_imports", "monthly_fuel_price", "annual_summer_fuel_avg", "monthly_disp_income", "summer_disp_income" ], // specify sheets to load
 			parseNumbers: true,
 			orderby: "year",
 			reverse: true,
@@ -63,22 +63,186 @@ $( document ).ready( function () {
 		var today = new Date(),
 			currYear = today.getFullYear();
 
+		// create a variable to parse year with D3
+		var parseYear = d3.timeParse( "%Y" );
+
 		console.log( "Spreadsheet data is loaded.", today.toJSON() );
 
 		/****
 		 LOAD DATA INTO VARIABLES
 		****/
-		// load individual sheets into variables
+		// load individual sheet elements into variables
 		var windHydroCapData = data.wind_over_hydro_cap.elements,
-			windHydroGenData = data.wind_over_hydro_gen.elements;
-		// console.table( windHydroGenData );
+			windHydroGenData = data.wind_over_hydro_gen.elements,
+			exportImportData = data.all_exports_ng_exports_net_imports.elements;
+		// console.table( exportImportData );
 
 		// create universal color scale
 		var lineColors = d3.scaleOrdinal()
 			.range( chartColors );
 
 		/****
-		 CHART #1: Wind vs. Hydro Net Summer Capacity
+		 CHART #1: Exports vs. NG exports vs. net imports vs. NG vs. crude oil prod
+		****/
+		// set oldest year to get data from
+		var minYr = 1997;
+
+		// set units for Y axis values
+		var yUnits = "Quadrillion Btu",
+			yUnitsAbbr = "Quad Btu";
+
+		// declare arrays for separate data
+		var primaryExports = [], // primary energy exports data
+			netImports = [], // primary energy net imports data
+			ngProd = [], // NG (dry) production data
+			crudeProd = [], // crude oil production data
+			allExpImpProd = []; // combined data
+
+		// loop through each row of windHydroCapData
+		exportImportData.forEach( function ( d, i ) {
+			// parse date to year
+			var wDate = new Date( d.year );
+			d.year = wDate.getUTCFullYear();
+
+			if ( d.year >= minYr ) {
+				primaryExports[ i ] = d[ "Primary Energy Exports" ];
+				netImports[ i ] = d[ "Primary Energy Net Imports" ];
+				ngProd[ i ] = d[ "Primary Energy Net Imports" ];
+				crudeProd[ i ] = d[ "Primary Energy Net Imports" ];
+			}
+		} );
+
+		// filter out data starting at minYr
+		exportImportData = exportImportData.filter( e => e.year >= minYr );
+
+		/*var filterCols = d3.keys( exportImportData[ 0 ] ).filter( function ( key ) {
+			// filter through the keys excluding certain columns
+			return key !== "year" && key !== "Natural Gas Exports";
+		} );*/
+
+		// concatenate all data into one array
+		allExpImpProd = primaryExports.concat( netImports ).concat( ngProd ).concat( crudeProd );
+		allMinMax = d3.extent( allExpImpProd );
+
+		// assign chart colors to each data class
+		lineColors.domain( d3.keys( exportImportData[ 0 ] ).filter( function ( key ) {
+			// filter through the keys excluding certain columns, e.g. x-axis data
+			return key !== "year" && key !== "Natural Gas Exports";
+		} ) );
+
+		// get chart container dimensions + set universal margins
+		var contWidth = $( "#export-import-prod" ).width(),
+			contHeight = $( "#export-import-prod" ).height();
+
+		// select container div + create SVG and main g elements within
+		var impExpProd = d3.select( "#export-import-prod" ),
+			iepWidth = contWidth * 0.65,
+			iepHeight = 0 + ( chartMargins.top + chartMargins.bottom ) * 2,
+			// create SVG viewport
+			g = impExpProd.append( "svg:svg" )
+			.attr( "id", "import-export-prod-chart" )
+			.attr( "width", iepWidth )
+			.attr( "height", iepHeight )
+			// create main g element container for the chart
+			.append( "svg:g" )
+			.attr( "transform", "translate(" + chartMargins.left + "," + chartMargins.top + ")" );
+
+		// append chart title
+		g.append( "svg:text" )
+			.attr( "x", chartMargins.left )
+			.attr( "y", 0 )
+			.attr( "class", "titles_chart-main" )
+			.text( "Net energy imports drop 35% since 2016" )
+
+		// X axis: scale + axis function variables
+		var iepX = d3.scaleTime()
+			.domain( d3.extent( exportImportData, function ( d ) {
+				return parseYear( d.year );
+			} ) )
+			.range( [ 0, iepWidth ] ),
+			xAxis = d3.axisBottom( iepX );
+
+		// Y axis: scale + axis function variables
+		var iepY = d3.scaleLinear()
+			.domain( [ allMinMax[ 0 ], allMinMax[ 1 ] ] )
+			.range( [ iepHeight, 0 ] ),
+			yAxis = d3.axisRight( iepY )
+			.tickSizeInner( iepWidth + chartMargins.left )
+			.tickPadding( 6 )
+			.tickFormat( function ( d ) {
+				return ( d );
+			} );
+
+		// create custom function for Y axis
+		function customYAxis( g ) {
+			// move axis to align properly with the bottom left corner including tick values
+			g.attr( "transform", "translate(" + ( -chartMargins.left / 2 ) + ", 0)" )
+			g.call( yAxis );
+			g.select( ".domain" );
+			g.attr( "text-anchor", "end" );
+			g.selectAll( ".tick:not(:first-of-type) line" ).attr( "stroke", "#777" ).attr( "stroke-dasharray", "2,2" );
+			g.selectAll( ".tick text" ).attr( "x", -4 ).attr( "dy", 0 );
+		}
+
+		// create lines
+		var line = d3.line()
+			// .curve( d3.curveMonotoneX() )
+			.x( function ( d ) {
+				return iepX( parseYear( d.year ) );
+			} )
+			.y( function ( d ) {
+				return iepY( d.btu );
+			} );
+
+		var sourceLines = lineColors.domain().map( function ( source ) {
+			return {
+				source: source,
+				values: exportImportData.map( function ( s ) {
+					return {
+						year: s.year,
+						btu: +s[ source ]
+					};
+				} )
+			}
+		} );
+
+		/* append SVG group elements */
+		// append X axis element: calls xAxis function
+		g.append( "g" )
+			.attr( "id", "iep-x-axis" )
+			.attr( "transform", "translate(0, " + iepHeight + ")" )
+			.call( xAxis )
+			.select( ".domain" ).remove();
+
+		// append Y axis element: calls yAxis function
+		g.append( "g" )
+			.attr( "id", "iep-y-axis" )
+			.call( customYAxis )
+			.append( "text" ) // add axis label
+			.attr( "transform", "rotate(-90)" )
+			.attr( "x", -( iepHeight / 2 ) )
+			.attr( "y", -35 )
+			.attr( "dy", ".71em" )
+			.attr( "class", "titles_axis-y" )
+			.text( yUnits );
+
+		// draw/append all data lines
+		var sourceLine = g.selectAll( ".source" )
+			.data( sourceLines )
+			.enter().append( "g" )
+			.attr( "class", "source" );
+
+		sourceLine.append( "path" )
+			.attr( "class", "line" )
+			.attr( "d", function ( d ) {
+				return line( d.values );
+			} )
+			.style( "stroke", function ( d ) {
+				return lineColors( d.source );
+			} );
+
+		/****
+		 CHART #2: Wind vs. Hydro Net Summer Capacity
 		****/
 		// declare arrays for separate data
 		var windCap = [], // wind cap data
@@ -103,10 +267,7 @@ $( document ).ready( function () {
 		// assign chart colors to column name
 		lineColors.domain( d3.keys( windHydroCapData[ 0 ] ).filter( function ( key ) {
 			return key !== "year";
-		} ) )
-
-		// create a variable to parse year with D3
-		var parseYear = d3.timeParse( "%Y" );
+		} ) );
 
 		// get chart container dimensions + set universal margins
 		var contWidth = $( "#wind-over-hydro-cap" ).width(),
@@ -118,9 +279,9 @@ $( document ).ready( function () {
 			windHeight = 0 + ( chartMargins.top + chartMargins.bottom ) * 2,
 			// create SVG viewport
 			g = windRecord.append( "svg:svg" )
+			.attr( "id", "wind-hydro-cap-chart" )
 			.attr( "width", windWidth )
 			.attr( "height", windHeight )
-			.attr( "id", "wind-hydro-cap-chart" )
 			// create main g element container for the chart
 			.append( "svg:g" )
 			.attr( "transform", "translate(" + chartMargins.left + "," + chartMargins.top + ")" );
@@ -221,7 +382,7 @@ $( document ).ready( function () {
 			} );
 
 		/****
-		 CHART #2: Wind vs. Hydro Net Generation
+		 CHART #3: Wind vs. Hydro Net Generation
 		****/
 		// declare arrays for separate data
 		var windGen = [], // wind gen data
@@ -266,9 +427,6 @@ $( document ).ready( function () {
 			return key !== "year";
 		} ) )
 
-		// create a variable to parse year with D3
-		var parseYear = d3.timeParse( "%Y" );
-
 		// get chart container dimensions + set universal margins
 		var contWidth = $( "#wind-over-hydro-gen" ).width(),
 			contHeight = $( "#wind-over-hydro-gen" ).height();
@@ -279,9 +437,9 @@ $( document ).ready( function () {
 			windHeight = 0 + ( chartMargins.top + chartMargins.bottom ) * 2,
 			// create SVG viewport
 			g = windRecord.append( "svg:svg" )
+			.attr( "id", "wind-hydro-chart" )
 			.attr( "width", windWidth )
 			.attr( "height", windHeight )
-			.attr( "id", "wind-hydro-chart" )
 			// create main g element container for the chart
 			.append( "svg:g" )
 			.attr( "transform", "translate(" + chartMargins.left + "," + chartMargins.top + ")" );
