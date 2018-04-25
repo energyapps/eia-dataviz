@@ -29,8 +29,9 @@ $( document ).ready( function () {
 		left: 70
 	}
 
-	// define universal colors
-	chartColors = [ "#7cc110", "#127ea8", "#2c8565", "#63B8FF", "#006400", "#EDB43D" ];
+	// define universal variables
+	var strokeWidth = [ 12, 8, 8, 6, 6, 4, 4, 2, 2, 2 ], // stroke width per max position
+		chartColors = [ "#7cc110", "#127ea8", "#2c8565", "#63B8FF", "#006400", "#EDB43D" ];
 
 	/* TABLETOP.JS: LOAD DATA */
 	// Google sheets ID
@@ -115,16 +116,11 @@ $( document ).ready( function () {
 		// filter out data starting at minYr
 		exportImportData = exportImportData.filter( e => e.year >= minYr );
 
-		/*var filterCols = d3.keys( exportImportData[ 0 ] ).filter( function ( key ) {
-			// filter through the keys excluding certain columns
-			return key !== "year" && key !== "Natural Gas Exports";
-		} );*/
-
 		// concatenate all data into one array
 		allExpImpProd = primaryExports.concat( netImports ).concat( ngProd ).concat( crudeProd );
 		allMinMax = d3.extent( allExpImpProd );
 
-		// assign chart colors to each data class
+		// assign chart colors to data
 		lineColors.domain( d3.keys( exportImportData[ 0 ] ).filter( function ( key ) {
 			// filter through the keys excluding certain columns, e.g. x-axis data
 			return key !== "year" && key !== "Natural Gas Exports";
@@ -164,7 +160,7 @@ $( document ).ready( function () {
 
 		// Y axis: scale + axis function variables
 		var iepY = d3.scaleLinear()
-			.domain( [ allMinMax[ 0 ], allMinMax[ 1 ] ] )
+			.domain( [ 0, allMinMax[ 1 ] ] )
 			.range( [ iepHeight, 0 ] ),
 			yAxis = d3.axisRight( iepY )
 			.tickSizeInner( iepWidth + chartMargins.left )
@@ -184,9 +180,9 @@ $( document ).ready( function () {
 			g.selectAll( ".tick text" ).attr( "x", -4 ).attr( "dy", 0 );
 		}
 
-		// create lines
+		// formula to create lines
 		var line = d3.line()
-			// .curve( d3.curveMonotoneX() )
+			// .curve( d3.curveMonotoneX )
 			.x( function ( d ) {
 				return iepX( parseYear( d.year ) );
 			} )
@@ -194,6 +190,7 @@ $( document ).ready( function () {
 				return iepY( d.btu );
 			} );
 
+		// map data to individual lines
 		var sourceLines = lineColors.domain().map( function ( source ) {
 			return {
 				source: source,
@@ -205,6 +202,7 @@ $( document ).ready( function () {
 				} )
 			}
 		} );
+		console.log( sourceLines );
 
 		/* append SVG group elements */
 		// append X axis element: calls xAxis function
@@ -237,9 +235,66 @@ $( document ).ready( function () {
 			.attr( "d", function ( d ) {
 				return line( d.values );
 			} )
+			/* .style("stroke-width", function(d) {
+			     return strokeWidth[maxPosition[namesByID[d.name]].values - 1];
+			 })*/
 			.style( "stroke", function ( d ) {
 				return lineColors( d.source );
-			} );
+			} )
+			.on( "mouseover", mouseover )
+		/*
+					.on("mouseout", mouseout)*/
+		;
+
+		// append a circle for each datapoint
+		/*sourceLine.append( "g" )
+			.attr( "class", "dots" )
+			.append( "circle" ) // Uses the enter().append() method
+			.attr( "class", "dot" ) // Assign a class for styling
+			.style( "fill", function ( d ) {
+				return lineColors( d.source );
+			} )
+			.attr( "cx", function ( d, i ) {
+				return iepX( parseYear( d.values[ i ].year ) )
+			} )
+			.attr( "cy", function ( d, i ) {
+				return iepY( d.values[ i ].btu )
+			} )
+			.attr( "r", 5 );*/
+
+		// draw/append tooltips
+		var popUpTooltips = g.append( "g" )
+			.data( sourceLines )
+			.attr( "transform", "translate(-100,-100)" )
+			.attr( "class", "tooltip" )
+			.style( "pointer-events", "none" );
+
+		popUpTooltips.append( "circle" )
+			.attr( "class", "tooltip_circle" )
+			.attr( "r", 4 );
+
+		popUpTooltips.append( "text" )
+			.attr( "class", "tooltip_title" )
+			.attr( "y", -15 );
+
+		// add mouseover action for tooltip
+		function mouseover( d ) {
+			return function ( s, i ) {
+				console.log( s[ i ].year );
+			}
+			// console.log( d3.values(  ) );
+
+			// set x and y location
+			/*dotX = iepX( parseYear( d.values[ i ].year ) );
+			dotY = iepY( d.values[ i ].btu );*/
+
+			//Change position of circle and text of tooltip
+			/*popUpTooltips.attr( "transform", "translate(" + dotX + "," + dotY + ")" )
+				.select( ".tooltipCircle" )
+				.style( "fill", lineColors( d.source ) )
+				.select( "text" )
+				.text( d.values.year );*/
+		} //mouseover
 
 		/****
 		 CHART #2: Wind vs. Hydro Net Summer Capacity

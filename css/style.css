@@ -53,16 +53,25 @@ path {
 	text-anchor: middle;
 }
 
-.tooltip_value {}
-
-.tooltip_circle {}
-
-.line-blue {
-	stroke: steelblue;
+.tooltip_title {
+	fill: black;
+	font-weight: bold;
+	font-size: 1.1em;
+	text-anchor: middle;
 }
 
-.line-green {
-	stroke: darkgreen;
+.tooltip_value {}
+
+.tooltip_circle {
+	fill: white;
+}
+
+.line {
+	stroke-width: 3;
+}
+
+.dot {
+	stroke: #fff;
 }
 
 /*+++++++++++++++++++++++++++
