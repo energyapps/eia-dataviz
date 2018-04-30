@@ -30,7 +30,7 @@ $( document ).ready( function () {
 	}
 
 	// define universal variables
-	var strokeWidth = [ 12, 8, 8, 6, 6, 4, 4, 2, 2, 2 ], // stroke width per max position
+	var strokeWidths = [ 6, 6, 2, 2, 1, 1 ], // stroke width per max position
 		chartColors = [ "#7cc110", "#127ea8", "#2c8565", "#63B8FF", "#006400", "#EDB43D" ];
 
 	/* TABLETOP.JS: LOAD DATA */
@@ -146,7 +146,7 @@ $( document ).ready( function () {
 		// append chart title
 		g.append( "svg:text" )
 			.attr( "x", chartMargins.left )
-			.attr( "y", 0 )
+			.attr( "y", -20 )
 			.attr( "class", "titles_chart-main" )
 			.text( "Net energy imports drop 35% since 2016" )
 
@@ -155,8 +155,12 @@ $( document ).ready( function () {
 			.domain( d3.extent( exportImportData, function ( d ) {
 				return parseYear( d.year );
 			} ) )
-			.range( [ 0, iepWidth ] ),
-			xAxis = d3.axisBottom( iepX );
+			.range( [ -chartMargins.left / 2, iepWidth + ( chartMargins.right / 2 ) ] );
+
+		xAxis = d3.axisBottom( iepX )
+			.ticks( exportImportData.length ); // add one tick for each year
+		// .tickPadding( 30 )
+		// .tickSizeInner( -iepHeight );
 
 		// Y axis: scale + axis function variables
 		var iepY = d3.scaleLinear()
@@ -182,7 +186,6 @@ $( document ).ready( function () {
 
 		// formula to create lines
 		var line = d3.line()
-			// .curve( d3.curveMonotoneX )
 			.x( function ( d ) {
 				return iepX( parseYear( d.year ) );
 			} )
@@ -202,9 +205,17 @@ $( document ).ready( function () {
 				} )
 			}
 		} );
-		console.log( sourceLines );
+		// console.log( sourceLines );
 
-		/* append SVG group elements */
+		var allSources = [],
+			sourceById = [];
+		// loop through source data to parse sources and IDs (keys) for each source
+		sourceLines.forEach( function ( d, i ) {
+			allSources[ i ] = d.source;
+			sourceById[ d.source ] = i;
+		} );
+
+		/* append SVG elements */
 		// append X axis element: calls xAxis function
 		g.append( "g" )
 			.attr( "id", "iep-x-axis" )
@@ -230,52 +241,111 @@ $( document ).ready( function () {
 			.enter().append( "g" )
 			.attr( "class", "source" );
 
+		// add lines for each source
 		sourceLine.append( "path" )
 			.attr( "class", "line" )
 			.attr( "d", function ( d ) {
 				return line( d.values );
 			} )
-			/* .style("stroke-width", function(d) {
-			     return strokeWidth[maxPosition[namesByID[d.name]].values - 1];
-			 })*/
+			.style( "stroke-width", function ( d ) {
+				// assign stroke width based on source value
+				return strokeWidths[ sourceById[ d.source ] ];
+			} )
 			.style( "stroke", function ( d ) {
 				return lineColors( d.source );
-			} )
-			.on( "mouseover", mouseover )
-		/*
-					.on("mouseout", mouseout)*/
-		;
+			} );
 
-		// append a circle for each datapoint
-		/*sourceLine.append( "g" )
-			.attr( "class", "dots" )
-			.append( "circle" ) // Uses the enter().append() method
-			.attr( "class", "dot" ) // Assign a class for styling
+		// add circle markers for each data point
+		sourceLine.append( "g" )
 			.style( "fill", function ( d ) {
 				return lineColors( d.source );
 			} )
+			.selectAll( "g" )
+			.attr( "class", "dots" )
+			.data( function ( d ) {
+				return d.values; // use only each source’s set of values as data
+			} )
+			.enter().append( "circle" )
+			.attr( "class", "dot" )
 			.attr( "cx", function ( d, i ) {
-				return iepX( parseYear( d.values[ i ].year ) )
+				return iepX( parseYear( d.year ) );
 			} )
 			.attr( "cy", function ( d, i ) {
-				return iepY( d.values[ i ].btu )
+				return iepY( d.btu );
 			} )
-			.attr( "r", 5 );*/
+			.attr( "r", 5 );
 
-		// draw/append tooltips
-		var popUpTooltips = g.append( "g" )
-			.data( sourceLines )
-			.attr( "transform", "translate(-100,-100)" )
-			.attr( "class", "tooltip" )
-			.style( "pointer-events", "none" );
+		/* VORONOI for rollover effects */
+		var flatData = [];
+		for ( k in sourceLines ) {
+			var k_data = sourceLines[ k ];
+			k_data.values.forEach( function ( d ) {
+				if ( d.year >= minYr ) flatData.push( {
+					name: k_data.source,
+					year: d.year,
+					position: d.btu
+				} );
+			} );
+		} // for k
+		console.log( "FLAT DATA", flatData );
 
-		popUpTooltips.append( "circle" )
-			.attr( "class", "tooltip_circle" )
-			.attr( "r", 4 );
+		var maxPosition = d3.nest()
+			.key( function ( d ) {
+				return d.name;
+			} )
+			.rollup( function ( d ) {
+				return d3.max( d, function ( g, i ) {
+					return g.position;
+				} )
+			} )
+			.entries( flatData );
+		// console.table( maxPosition );
 
-		popUpTooltips.append( "text" )
-			.attr( "class", "tooltip_title" )
-			.attr( "y", -15 );
+		// initiate the voronoi function
+		var voronoi = d3.voronoi()
+			.x( function ( d, i ) {
+				return iepX( parseYear( d.year ) );
+			} )
+			.y( function ( d, i ) {
+				return iepY( d.btu );
+			} )
+			.extent( [ [ -chartMargins.left, -chartMargins.top ], [ iepWidth + chartMargins.right, iepHeight + chartMargins.bottom ]
+			] );
+
+		var voronoiData = d3.nest()
+			// .key(function(d) { return x(d.date) + "," + y(d.value); })
+			.key( function ( d ) {
+				return d.source;
+			} )
+			// .rollup(function(v) { return v[0]; })
+			.entries( sourceLines )
+		// .map(function(d) { return d.values; });
+
+		console.log( "VORONOI DATA", voronoiData );
+		// console.log( voronoi( voronoiData ) );
+
+		// append the voronoi group element and map to points
+		var voronoiGroup = g.append( "g" )
+			.attr( "class", "voronoi" )
+			.selectAll( "path" )
+			// .data( voronoi( flatData.filter( function ( d ) {
+			// 	return parseYear( d.year ) >= iepX.domain()[ 0 ] & parseYear( d.year ) <= iepX.domain()[ 1 ];
+			// } ) ) )
+			.enter().append( "path" )
+			.attr( "d", function ( d ) {
+				return "M" + d.join( "L" ) + "Z";
+			} )
+		/*.datum( function ( d ) {
+			return d.point;
+		} )*/
+		//.style("stroke", "red")
+		/*.attr("class", "voronoiCells")
+		.on("mouseover", mouseover)
+		.on("mouseout", mouseout)
+		.on("click", function(d) {
+		    searchEvent(d.name);
+		})*/
+		;
 
 		// add mouseover action for tooltip
 		function mouseover( d ) {
@@ -296,6 +366,20 @@ $( document ).ready( function () {
 				.text( d.values.year );*/
 		} //mouseover
 
+		// draw/append tooltips
+		var popUpTooltips = g.append( "g" )
+			.data( sourceLines )
+			.attr( "transform", "translate(-100,-100)" )
+			.attr( "class", "tooltip" )
+			.style( "pointer-events", "none" );
+
+		popUpTooltips.append( "circle" )
+			.attr( "class", "tooltip_circle" )
+			.attr( "r", 4 );
+
+		popUpTooltips.append( "text" )
+			.attr( "class", "tooltip_title" )
+			.attr( "y", -15 );
 		/****
 		 CHART #2: Wind vs. Hydro Net Summer Capacity
 		****/
