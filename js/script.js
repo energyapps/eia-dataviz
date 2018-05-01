@@ -138,17 +138,29 @@ $( document ).ready( function () {
 			g = impExpProd.append( "svg:svg" )
 			.attr( "id", "import-export-prod-chart" )
 			.attr( "width", iepWidth )
-			.attr( "height", iepHeight )
-			// create main g element container for the chart
-			.append( "svg:g" )
-			.attr( "transform", "translate(" + chartMargins.left + "," + chartMargins.top + ")" );
+			.attr( "height", iepHeight );
+
+		// append definitions
+		g.append( "defs" )
+			.append( "clipPath" )
+			.attr( "id", "lines-clip" )
+			.append( "rect" )
+			.attr( "width", iepWidth + chartMargins.left )
+			.attr( "height", iepHeight + chartMargins.top )
+			.attr( "x", -chartMargins.left / 2 )
+			.attr( "y", -chartMargins.top / 2 );
 
 		// append chart title
 		g.append( "svg:text" )
-			.attr( "x", chartMargins.left )
-			.attr( "y", -20 )
+			.attr( "x", chartMargins.left / 3 )
+			.attr( "y", chartMargins.top / 2 )
 			.attr( "class", "titles_chart-main" )
-			.text( "Net energy imports drop 35% since 2016" )
+			.text( "Net energy imports drop 35% since 2016" );
+
+		// create main g element container for the chart
+		var chart = g.append( "g" )
+			.attr( "transform", "translate(" + chartMargins.left + "," + chartMargins.top + ")" )
+			.attr( "class", "chart-wrapper" );
 
 		// X axis: scale + axis function variables
 		var iepX = d3.scaleTime()
@@ -167,6 +179,7 @@ $( document ).ready( function () {
 			.domain( [ 0, allMinMax[ 1 ] ] )
 			.range( [ iepHeight, 0 ] ),
 			yAxis = d3.axisRight( iepY )
+			.ticks( 5 )
 			.tickSizeInner( iepWidth + chartMargins.left )
 			.tickPadding( 6 )
 			.tickFormat( function ( d ) {
@@ -176,12 +189,12 @@ $( document ).ready( function () {
 		// create custom function for Y axis
 		function customYAxis( g ) {
 			// move axis to align properly with the bottom left corner including tick values
-			g.attr( "transform", "translate(" + ( -chartMargins.left / 2 ) + ", 0)" )
-			g.call( yAxis );
-			g.select( ".domain" );
-			g.attr( "text-anchor", "end" );
-			g.selectAll( ".tick:not(:first-of-type) line" ).attr( "stroke", "#777" ).attr( "stroke-dasharray", "2,2" );
-			g.selectAll( ".tick text" ).attr( "x", -4 ).attr( "dy", 0 );
+			chart.attr( "transform", "translate(" + ( -chartMargins.left / 2 ) + ", 0)" )
+			chart.call( yAxis );
+			chart.select( ".domain" );
+			chart.attr( "text-anchor", "end" );
+			chart.selectAll( ".tick:not(:first-of-type) line" ).attr( "stroke", "#777" ).attr( "stroke-dasharray", "2,2" );
+			chart.selectAll( ".tick text" ).attr( "x", -4 ).attr( "dy", 0 );
 		}
 
 		// formula to create lines
@@ -217,14 +230,14 @@ $( document ).ready( function () {
 
 		/* append SVG elements */
 		// append X axis element: calls xAxis function
-		g.append( "g" )
+		chart.append( "g" )
 			.attr( "id", "iep-x-axis" )
 			.attr( "transform", "translate(0, " + iepHeight + ")" )
 			.call( xAxis )
 			.select( ".domain" ).remove();
 
 		// append Y axis element: calls yAxis function
-		g.append( "g" )
+		chart.append( "g" )
 			.attr( "id", "iep-y-axis" )
 			.call( customYAxis )
 			.append( "text" ) // add axis label
@@ -235,14 +248,24 @@ $( document ).ready( function () {
 			.attr( "class", "titles_axis-y" )
 			.text( yUnits );
 
+		// add containers for lines and markers
+		chart.append( "g" )
+			.attr( "id", "lines" )
+			.attr( "clip-path", "url(#lines-clip)" );
+
 		// draw/append all data lines
-		var sourceLine = g.selectAll( ".source" )
+		var sourceLine = chart.select( "#lines" )
+			.selectAll( ".source" )
 			.data( sourceLines )
 			.enter().append( "g" )
 			.attr( "class", "source" );
 
 		// add lines for each source
-		sourceLine.append( "path" )
+		var linePath = chart.selectAll( ".source" )
+			.append( "path" )
+			/*.attr( "id", function ( d ) {
+				return d.source;
+			} )*/
 			.attr( "class", "line" )
 			.attr( "d", function ( d ) {
 				return line( d.values );
@@ -255,13 +278,55 @@ $( document ).ready( function () {
 				return lineColors( d.source );
 			} );
 
+		// declare variable for paths array
+		var paths = linePath._groups[ 0 ],
+			pathsLength = [];
+		paths.forEach( function ( d, i ) {
+			pathsLength[ i ] = d.getTotalLength();
+		} );
+		console.log( pathsLength );
+
+		/*function dashArray( d ) {
+			// console.table( d );
+			return d.forEach( function ( l, i ) {
+				// console.log( l.source );
+				// console.log( pathsLength[ sourceById[ l.source ] ] + "," + pathsLength[ sourceById[ l.source ] ] );
+				return pathsLength[ sourceById[ l.source ] ] + "," + pathsLength[ sourceById[ l.source ] ];
+			} );
+		}
+		dashArray( sourceLines );
+		console.log( dashArray( sourceLines ) );*/
+
+		linePath.selectAll( ".line" )
+			.attr( "id", function ( d ) {
+				return d.source;
+			} );
+		/*
+		.attr( "stroke-dasharray", lineLength + "," + lineLength )
+		.attr( "stroke-dashoffset", lineLength )
+		.transition()
+		.duration( 5000 )*/
+		/*
+					.ease( "linear" )
+					.attr( "stroke-dashoffset", 0 )*/
+		;
+
+		// add markers group
+		chart.append( "g" )
+			.attr( "id", "markers" )
+
+		// draw/append all data point markers
+		var sourceMarkers = chart.select( "#markers" )
+			.selectAll( ".dots" )
+			.data( sourceLines )
+			.enter().append( "g" )
+			.attr( "class", "dots" );
+
 		// add circle markers for each data point
-		sourceLine.append( "g" )
-			.style( "fill", function ( d ) {
+		sourceMarkers.style( "fill", function ( d ) {
 				return lineColors( d.source );
 			} )
-			.selectAll( "g" )
-			.attr( "class", "dots" )
+			.selectAll( ".dots" )
 			.data( function ( d ) {
 				return d.values; // use only each source’s set of values as data
 			} )
@@ -273,7 +338,8 @@ $( document ).ready( function () {
 			.attr( "cy", function ( d, i ) {
 				return iepY( d.btu );
 			} )
-			.attr( "r", 5 );
+			.attr( "r", 6 )
+			.on( "mouseover", mouseover );
 
 		/* VORONOI for rollover effects */
 		var flatData = [];
@@ -287,7 +353,7 @@ $( document ).ready( function () {
 				} );
 			} );
 		} // for k
-		console.log( "FLAT DATA", flatData );
+		// console.log( "FLAT DATA", flatData );
 
 		var maxPosition = d3.nest()
 			.key( function ( d ) {
@@ -321,11 +387,11 @@ $( document ).ready( function () {
 			.entries( sourceLines )
 		// .map(function(d) { return d.values; });
 
-		console.log( "VORONOI DATA", voronoiData );
+		// console.log( "VORONOI DATA", voronoiData );
 		// console.log( voronoi( voronoiData ) );
 
 		// append the voronoi group element and map to points
-		var voronoiGroup = g.append( "g" )
+		var voronoiGroup = chart.append( "g" )
 			.attr( "class", "voronoi" )
 			.selectAll( "path" )
 			// .data( voronoi( flatData.filter( function ( d ) {
@@ -349,8 +415,8 @@ $( document ).ready( function () {
 
 		// add mouseover action for tooltip
 		function mouseover( d ) {
-			return function ( s, i ) {
-				console.log( s[ i ].year );
+			return function ( d, i ) {
+				return iepX( parseYear( d.year ) );
 			}
 			// console.log( d3.values(  ) );
 
