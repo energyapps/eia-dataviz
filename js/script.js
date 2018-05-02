@@ -361,7 +361,7 @@ $( document ).ready( function () {
 				} );
 			} );
 		} // for k
-		console.log( "FLAT DATA", flatData );
+		// console.log( "FLAT DATA", flatData );
 
 		// nest flattened data for voronoi
 		var voronoiData = d3.nest()
@@ -375,7 +375,7 @@ $( document ).ready( function () {
 			.map( function ( d ) {
 				return d.value;
 			} );
-		console.log( "VORONOI DATA", voronoiData );
+		// console.log( "VORONOI DATA", voronoiData );
 
 		// initiate the voronoi function
 		var voronoi = d3.voronoi()
@@ -388,8 +388,7 @@ $( document ).ready( function () {
 			.extent( [ [ -chartMargins.left / 2, -chartMargins.top / 2 ], [ iepWidth + chartMargins.left, iepHeight + chartMargins.top ]
 			] );
 		var voronoiOutput = voronoi( voronoiData );
-
-		console.log( "VORONOI OUTPUT", voronoiOutput );
+		// console.log( "VORONOI OUTPUT", voronoiOutput );
 
 		// append the voronoi group element and map to points
 		var voronoiGroup = chart.append( "g" )
@@ -401,42 +400,45 @@ $( document ).ready( function () {
 			.attr( "d", function ( d ) {
 				return d ? "M" + d.join( "L" ) + "Z" : null;
 			} )
-			.on( "mouseover", mouseover )
-		// .style( "stroke", "red" )
-		/*.attr("class", "voronoiCells")
-		.on("mouseover", mouseover)
-		.on("mouseout", mouseout)
-		.on("click", function(d) {
-		    searchEvent(d.name);
-		})*/
+			.on( "mouseover", mouseover );
+		// .style( "stroke", "red" );
 
 		// add mouseover action for tooltip
 		function mouseover( d ) {
-			console.log( d.data );
-		}
+			// console.log( d.data );
+			// set x and y location
+			var dotX = iepX( parseYear( d.data.year ) ),
+				dotY = iepY( d.data.value ),
+				dotBtu = d.data.value,
+				dotYear = d.data.year,
+				dotSource = d.data.name;
 
-		// 	// set x and y location
-		// 	/*dotX = iepX( parseYear( d.values[ i ].year ) );
-		// 	dotY = iepY( d.values[ i ].btu );*/
+			console.log( dotSource, dotYear, dotX, dotY );
 
-		// 	//Change position of circle and text of tooltip
-		// 	/*popUpTooltips.attr( "transform", "translate(" + dotX + "," + dotY + ")" )
-		// 		.select( ".tooltipCircle" )
-		// 		.style( "fill", lineColors( d.source ) )
-		// 		.select( "text" )
-		// 		.text( d.values.year );*/
-		// } //mouseover
+			// add content to tooltip text element
+			popUpTooltips.select( ".tooltip_title" )
+				.text( dotSource );
+
+			//Change position of circle and text of tooltip
+			popUpTooltips.attr( "transform", "translate(" + ( dotX + chartMargins.left ) + "," + ( dotY + chartMargins.top ) + ")" );
+
+			popUpTooltips.select( ".tooltipCircle" )
+				.data( sourceLines )
+				.style( "fill", lineColors( d.source ) );
+
+			// .attr( "transform", "translate(" + ( dotX + chartMargins.left ) + "," + ( dotY + chartMargins.top ) + ")" )
+			// .text( dotSource + "<br/>" + dotYear + "<br/>" + d3.format( ".1f" )( dotBtu ) );
+		} //mouseover
 
 		// draw/append tooltips
 		var popUpTooltips = g.append( "g" )
-			.data( sourceLines )
 			.attr( "transform", "translate(-100,-100)" )
 			.attr( "class", "tooltip" )
 			.style( "pointer-events", "none" );
 
 		popUpTooltips.append( "circle" )
 			.attr( "class", "tooltip_circle" )
-			.attr( "r", 4 );
+			.attr( "r", 8 );
 
 		popUpTooltips.append( "text" )
 			.attr( "class", "tooltip_title" )
