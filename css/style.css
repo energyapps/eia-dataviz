@@ -37,22 +37,43 @@ path {
 	stroke-linecap: round;
 }
 
-.chart-title {
-	font-size: 14px;
-	/*text-anchor: middle;*/
-	/*text-decoration: underline;*/
-}
-
 .domain {
 	stroke: none;
 }
 
-.line-blue {
-	stroke: steelblue;
+.titles_chart-main {
+	font-size: 1.2em;
+	/*text-anchor: middle;*/
+	/*text-decoration: underline;*/
 }
 
-.line-green {
-	stroke: darkgreen;
+.titles_axis-y {
+	fill: black;
+	font-size: 1em;
+	text-anchor: middle;
+}
+
+.tooltip_title {
+	fill: black;
+	font-weight: bold;
+	font-size: 1.1em;
+	text-anchor: middle;
+}
+
+.line {
+	opacity: 0.8;
+	stroke-width: 3;
+}
+
+.dot {
+	visibility: hidden;
+	stroke: #fff;
+}
+
+.voronoi_cells {
+	pointer-events: all;
+	/*stroke-width: 0.5;
+	stroke: red;*/
 }
 
 /*+++++++++++++++++++++++++++
