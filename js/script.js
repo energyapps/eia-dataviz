@@ -170,7 +170,7 @@ $( document ).ready( function () {
 			.range( [ -chartMargins.left / 2, iepWidth + ( chartMargins.right / 2 ) ] );
 
 		xAxis = d3.axisBottom( iepX )
-			.ticks( exportImportData.length ); // add one tick for each year
+			.ticks( exportImportData.length ); // include one tick for each year
 		// .tickPadding( 30 )
 		// .tickSizeInner( -iepHeight );
 
@@ -179,7 +179,7 @@ $( document ).ready( function () {
 			.domain( [ 0, allMinMax[ 1 ] ] )
 			.range( [ iepHeight, 0 ] ),
 			yAxis = d3.axisRight( iepY )
-			.ticks( 5 )
+			.ticks( 5 ) // specify the scale of the axis
 			.tickSizeInner( iepWidth + chartMargins.left )
 			.tickPadding( 6 )
 			.tickFormat( function ( d ) {
@@ -260,12 +260,9 @@ $( document ).ready( function () {
 			.enter().append( "g" )
 			.attr( "class", "source" );
 
-		// add lines for each source
+		// add lines for each source group
 		var linePath = chart.selectAll( ".source" )
 			.append( "path" )
-			/*.attr( "id", function ( d ) {
-				return d.source;
-			} )*/
 			.attr( "class", "line" )
 			.attr( "d", function ( d ) {
 				return line( d.values );
@@ -278,42 +275,39 @@ $( document ).ready( function () {
 				return lineColors( d.source );
 			} );
 
-		// declare variable for paths array
-		var paths = linePath._groups[ 0 ],
-			pathsLength = [];
-		paths.forEach( function ( d, i ) {
-			pathsLength[ i ] = d.getTotalLength();
-		} );
-		console.log( pathsLength );
-
-		/*function dashArray( d ) {
-			// console.table( d );
-			return d.forEach( function ( l, i ) {
-				// console.log( l.source );
-				// console.log( pathsLength[ sourceById[ l.source ] ] + "," + pathsLength[ sourceById[ l.source ] ] );
-				return pathsLength[ sourceById[ l.source ] ] + "," + pathsLength[ sourceById[ l.source ] ];
-			} );
-		}
-		dashArray( sourceLines );
-		console.log( dashArray( sourceLines ) );*/
-
-		linePath.selectAll( ".line" )
+		chart.selectAll( ".line" )
 			.attr( "id", function ( d ) {
 				return d.source;
-			} );
-		/*
-		.attr( "stroke-dasharray", lineLength + "," + lineLength )
-		.attr( "stroke-dashoffset", lineLength )
-		.transition()
-		.duration( 5000 )*/
-		/*
-					.ease( "linear" )
-					.attr( "stroke-dashoffset", 0 )*/
-		;
+			} )
+			.call( transition ); // call function to animate lines
+
+		// declare function to animate the lines
+		function transition( path ) {
+			path.attr( "stroke-dashoffset", pathLength ) // set full length first for ltr anim
+				.transition()
+				.duration( 5000 )
+				.attrTween( "stroke-dasharray", dashArray )
+				.attr( "stroke-dashoffset", 0 );
+		}
+
+		// declare function to calculate stroke dash array
+		function dashArray() {
+			var l = this.getTotalLength(),
+				i = d3.interpolateString( "0," + l, l + "," + l );
+			return function ( t ) {
+				return i( t );
+			};
+		}
+
+		// declare function to calculate full length of path
+		function pathLength() {
+			var l = this.getTotalLength();
+			return -l;
+		}
 
 		// add markers group
 		chart.append( "g" )
-			.attr( "id", "markers" )
+			.attr( "id", "markers" );
 
 		// draw/append all data point markers
 		var sourceMarkers = chart.select( "#markers" )
@@ -338,24 +332,10 @@ $( document ).ready( function () {
 			.attr( "cy", function ( d, i ) {
 				return iepY( d.btu );
 			} )
-			.attr( "r", 6 )
-			.on( "mouseover", mouseover );
+			.attr( "r", 6 );
+		// .on( "mouseover", mouseover );
 
-		/* VORONOI for rollover effects */
-		var flatData = [];
-		for ( k in sourceLines ) {
-			var k_data = sourceLines[ k ];
-			k_data.values.forEach( function ( d ) {
-				if ( d.year >= minYr ) flatData.push( {
-					name: k_data.source,
-					year: d.year,
-					position: d.btu
-				} );
-			} );
-		} // for k
-		// console.log( "FLAT DATA", flatData );
-
-		var maxPosition = d3.nest()
+		/*var maxPosition = d3.nest()
 			.key( function ( d ) {
 				return d.name;
 			} )
@@ -364,73 +344,88 @@ $( document ).ready( function () {
 					return g.position;
 				} )
 			} )
-			.entries( flatData );
+			.entries( flatData );*/
 		// console.table( maxPosition );
+
+		/* VORONOI for rollover effects */
+		// create array variable for flattened data
+		var flatData = [];
+		// flatten all data into one array
+		for ( k in sourceLines ) {
+			var k_data = sourceLines[ k ];
+			k_data.values.forEach( function ( d ) {
+				if ( d.year >= minYr ) flatData.push( {
+					name: k_data.source,
+					year: d.year,
+					value: d.btu
+				} );
+			} );
+		} // for k
+		console.log( "FLAT DATA", flatData );
+
+		// nest flattened data for voronoi
+		var voronoiData = d3.nest()
+			.key( function ( d ) {
+				return iepX( parseYear( d.year ) ) + "," + iepY( d.value );
+			} )
+			.rollup( function ( v ) {
+				return v[ 0 ];
+			} )
+			.entries( flatData )
+			.map( function ( d ) {
+				return d.value;
+			} );
+		console.log( "VORONOI DATA", voronoiData );
 
 		// initiate the voronoi function
 		var voronoi = d3.voronoi()
-			.x( function ( d, i ) {
+			.x( function ( d ) {
 				return iepX( parseYear( d.year ) );
 			} )
-			.y( function ( d, i ) {
-				return iepY( d.btu );
+			.y( function ( d ) {
+				return iepY( d.value );
 			} )
-			.extent( [ [ -chartMargins.left, -chartMargins.top ], [ iepWidth + chartMargins.right, iepHeight + chartMargins.bottom ]
+			.extent( [ [ -chartMargins.left / 2, -chartMargins.top / 2 ], [ iepWidth + chartMargins.left, iepHeight + chartMargins.top ]
 			] );
+		var voronoiOutput = voronoi( voronoiData );
 
-		var voronoiData = d3.nest()
-			// .key(function(d) { return x(d.date) + "," + y(d.value); })
-			.key( function ( d ) {
-				return d.source;
-			} )
-			// .rollup(function(v) { return v[0]; })
-			.entries( sourceLines )
-		// .map(function(d) { return d.values; });
-
-		// console.log( "VORONOI DATA", voronoiData );
-		// console.log( voronoi( voronoiData ) );
+		console.log( "VORONOI OUTPUT", voronoiOutput );
 
 		// append the voronoi group element and map to points
 		var voronoiGroup = chart.append( "g" )
 			.attr( "class", "voronoi" )
 			.selectAll( "path" )
-			// .data( voronoi( flatData.filter( function ( d ) {
-			// 	return parseYear( d.year ) >= iepX.domain()[ 0 ] & parseYear( d.year ) <= iepX.domain()[ 1 ];
-			// } ) ) )
+			.attr( "class", "voronoi_cells" )
+			.data( voronoiOutput.polygons() )
 			.enter().append( "path" )
 			.attr( "d", function ( d ) {
-				return "M" + d.join( "L" ) + "Z";
+				return d ? "M" + d.join( "L" ) + "Z" : null;
 			} )
-		/*.datum( function ( d ) {
-			return d.point;
-		} )*/
-		//.style("stroke", "red")
+			.on( "mouseover", mouseover )
+		// .style( "stroke", "red" )
 		/*.attr("class", "voronoiCells")
 		.on("mouseover", mouseover)
 		.on("mouseout", mouseout)
 		.on("click", function(d) {
 		    searchEvent(d.name);
 		})*/
-		;
 
 		// add mouseover action for tooltip
 		function mouseover( d ) {
-			return function ( d, i ) {
-				return iepX( parseYear( d.year ) );
-			}
-			// console.log( d3.values(  ) );
+			console.log( d.data );
+		}
 
-			// set x and y location
-			/*dotX = iepX( parseYear( d.values[ i ].year ) );
-			dotY = iepY( d.values[ i ].btu );*/
+		// 	// set x and y location
+		// 	/*dotX = iepX( parseYear( d.values[ i ].year ) );
+		// 	dotY = iepY( d.values[ i ].btu );*/
 
-			//Change position of circle and text of tooltip
-			/*popUpTooltips.attr( "transform", "translate(" + dotX + "," + dotY + ")" )
-				.select( ".tooltipCircle" )
-				.style( "fill", lineColors( d.source ) )
-				.select( "text" )
-				.text( d.values.year );*/
-		} //mouseover
+		// 	//Change position of circle and text of tooltip
+		// 	/*popUpTooltips.attr( "transform", "translate(" + dotX + "," + dotY + ")" )
+		// 		.select( ".tooltipCircle" )
+		// 		.style( "fill", lineColors( d.source ) )
+		// 		.select( "text" )
+		// 		.text( d.values.year );*/
+		// } //mouseover
 
 		// draw/append tooltips
 		var popUpTooltips = g.append( "g" )

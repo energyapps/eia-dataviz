@@ -60,12 +60,6 @@ path {
 	text-anchor: middle;
 }
 
-.tooltip_value {}
-
-.tooltip_circle {
-	/*fill: white;*/
-}
-
 .line {
 	opacity: 0.8;
 	stroke-width: 3;
@@ -74,6 +68,12 @@ path {
 .dot {
 	visibility: hidden;
 	stroke: #fff;
+}
+
+.voronoi_cells {
+	pointer-events: all;
+	/*stroke-width: 0.5;
+	stroke: red;*/
 }
 
 /*+++++++++++++++++++++++++++
