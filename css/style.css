@@ -70,8 +70,13 @@ path {
 	stroke: #fff;
 }
 
+.dot--visible {
+	visibility: visible;
+}
+
 .voronoi_cells {
 	pointer-events: all;
+	stroke: none;
 	/*stroke-width: 0.5;
 	stroke: red;*/
 }
