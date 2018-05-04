@@ -53,11 +53,38 @@ path {
 	text-anchor: middle;
 }
 
+.tooltip {
+	background-color: white;
+	color: black;
+	height: 100%;
+	max-height: 3em;
+	max-width: 6em;
+	padding: 0.5em .05em .05em;
+	position: absolute;
+	text-align: center;
+	visibility: hidden;
+	width: 100%;
+	z-index: 1000;
+}
+
+.tooltip p {
+	line-height: 0.9;
+	margin-bottom: 0;
+}
+
 .tooltip_title {
-	fill: black;
+	/*fill: black;*/
 	font-weight: bold;
+	font-size: 0.70em;
+	/*text-anchor: middle;*/
+}
+
+.tooltip_data {
+	display: block;
+	font-weight: 500;
 	font-size: 0.65em;
-	text-anchor: middle;
+	margin-top: .5em;
+	/*text-anchor: middle;*/
 }
 
 .line {
@@ -66,7 +93,7 @@ path {
 }
 
 .dot {
-	visibility: hidden;
+	/*visibility: hidden;*/
 	stroke: #fff;
 }
 
