@@ -31,6 +31,7 @@ $( document ).ready( function () {
 
 	// define universal variables
 	var strokeWidths = [ 6, 6, 2, 2, 1, 1 ], // stroke width per max position
+		fontWeights = [ 700, 700, 500, 500, 300, 300 ], // font weight per max position
 		chartColors = [ "#7cc110", "#127ea8", "#2c8565", "#63B8FF", "#006400", "#EDB43D" ];
 
 	/* TABLETOP.JS: LOAD DATA */
@@ -106,10 +107,10 @@ $( document ).ready( function () {
 			d.year = wDate.getUTCFullYear();
 
 			if ( d.year >= minYr ) {
-				primaryExports[ i ] = d[ "Primary Energy Exports" ];
-				netImports[ i ] = d[ "Primary Energy Net Imports" ];
-				ngProd[ i ] = d[ "Primary Energy Net Imports" ];
-				crudeProd[ i ] = d[ "Primary Energy Net Imports" ];
+				primaryExports[ i ] = d[ "Total Energy Exports" ];
+				netImports[ i ] = d[ "Net Energy Imports" ];
+				ngProd[ i ] = d[ "Total Energy Net Imports" ];
+				crudeProd[ i ] = d[ "Net Energy Imports" ];
 			}
 		} );
 
@@ -218,7 +219,6 @@ $( document ).ready( function () {
 				} )
 			}
 		} );
-		// console.log( sourceLines );
 
 		var allSources = [],
 			sourceById = [];
@@ -285,7 +285,7 @@ $( document ).ready( function () {
 		function transition( path ) {
 			path.attr( "stroke-dashoffset", pathLength ) // set full length first for ltr anim
 				.transition()
-				.duration( 5000 )
+				.duration( 3000 )
 				.attrTween( "stroke-dasharray", dashArray )
 				.attr( "stroke-dashoffset", 0 );
 		}
@@ -304,6 +304,37 @@ $( document ).ready( function () {
 			var l = this.getTotalLength();
 			return -l;
 		}
+
+		// add line labels group
+		chart.append( "g" )
+			.attr( "id", "line-labels" );
+
+		// draw/append labels for every line
+		var lineLabels = chart.select( "#line-labels" )
+			.selectAll( ".line-label" )
+			.data( sourceLines )
+			.enter().append( "text" )
+			.attr( "class", "line-label" )
+			.datum( function ( d ) {
+				return {
+					source: d.source,
+					value: d.values[ 0 ]
+				};
+			} )
+			.text( function ( d ) {
+				return d.source;
+			} )
+			.attr( "transform", function ( d ) {
+				return "translate(" + ( iepX( parseYear( d.value.year ) ) + 5 ) + "," + ( iepY( d.value.btu ) + 3 ) + ")";
+			} )
+			.style( "fill", function ( d ) {
+				return lineColors( d.source );
+			} )
+			.style( "font-weight", function ( d ) {
+				// assign font weight based on source value
+				return fontWeights[ sourceById[ d.source ] ];
+			} )
+			.call( wrap, 115, .05 );
 
 		// add markers group
 		chart.append( "g" )
@@ -852,4 +883,35 @@ $( document ).ready( function () {
 		// 	infoObj[ "url" ] = doeStats[ i ][ "url" ]; // equate profile url
 		// 	platformInfo.push( infoObj ); // push to new account-only array
 	}
+
+	// function for wrapping long SVG text
+	function wrap( text, width, yheight ) {
+		text.each( function () {
+			var text = d3.select( this ),
+				words = text.text().split( /\s+/ ).reverse(),
+				word,
+				line = [],
+				lineNumber = 0,
+				lineHeight = 1.1, // ems
+				y = 0 /*text.attr( "y" )*/ ,
+				dy = parseFloat( yheight ),
+				tspan = text.text( null ).append( "tspan" ).attr( "x", 0 ).attr( "y", y ).attr( "dy", dy + "em" );
+			while ( word = words.pop() ) {
+				line.push( word );
+
+				console.log( line, y, yheight );
+				tspan.text( line.join( " " ) );
+				// console.log( "comp text length", tspan.node().getComputedTextLength(), width );
+				//console.log( y );
+				if ( tspan.node().getComputedTextLength() > width ) {
+					line.pop();
+					tspan.text( line.join( " " ) );
+					line = [ word ];
+					tspan = text.append( "tspan" ).attr( "x", 0 ).attr( "y", y ).attr( "dy", dy + ( lineHeight * ++lineNumber ) + "em" ).text( word );
+					// console.log( dy + ( lineHeight * lineNumber ) );
+				}
+			}
+		} );
+	}
+
 } );

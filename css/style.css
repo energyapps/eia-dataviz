@@ -92,8 +92,13 @@ path {
 	stroke-width: 3;
 }
 
+.line-label {
+	font-size: .85em;
+	margin-bottom: .02em;
+}
+
 .dot {
-	/*visibility: hidden;*/
+	visibility: hidden;
 	stroke: #fff;
 }
 
