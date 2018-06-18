@@ -9,7 +9,7 @@ var pymChild = new pym.Child();
 	Do not remove above!
 ***********/
 
-$( document ).ready( function() {
+$( document ).ready( function () {
 	console.log( "Page loaded. Jquery is running. Now, do stuff." );
 
 	// get current date and extract year
@@ -18,7 +18,7 @@ $( document ).ready( function() {
 		currMonth = today.getMonth();
 
 	if ( 2 < currMonth < 9 ) {
-		console.log( "it's summer", currMonth, currYear );
+		console.log( "It’s summer", currMonth, currYear );
 	}
 
 	// set universal chart margins
@@ -48,7 +48,7 @@ $( document ).ready( function() {
 			parseNumbers: true,
 			orderby: "year",
 			reverse: true,
-			postProcess: function( element ) {
+			postProcess: function ( element ) {
 				// format date string
 				element[ "year" ] = Date.parse( element[ "year" ] );
 			}
@@ -68,7 +68,7 @@ $( document ).ready( function() {
 		// create a variable to parse year with D3
 		var parseYear = d3.timeParse( "%Y" );
 
-		console.log( "Spreadsheet data is loaded.", today.toJSON() );
+		console.log( "Spreadsheet data is loaded on", today.toJSON() );
 
 		/****
 		 LOAD DATA INTO VARIABLES
@@ -101,7 +101,7 @@ $( document ).ready( function() {
 			allExpImpProd = []; // combined data
 
 		// loop through each row of windHydroCapData
-		exportImportData.forEach( function( d, i ) {
+		exportImportData.forEach( function ( d, i ) {
 			// parse date to year
 			var wDate = new Date( d.year );
 			d.year = wDate.getUTCFullYear();
@@ -122,7 +122,7 @@ $( document ).ready( function() {
 		allMinMax = d3.extent( allExpImpProd );
 
 		// assign chart colors to data
-		lineColors.domain( d3.keys( exportImportData[ 0 ] ).filter( function( key ) {
+		lineColors.domain( d3.keys( exportImportData[ 0 ] ).filter( function ( key ) {
 			// filter through the keys excluding certain columns, e.g. x-axis data
 			return key !== "year" && key !== "Natural Gas Exports";
 		} ) );
@@ -156,7 +156,7 @@ $( document ).ready( function() {
 			.attr( "x", chartMargins.left / 3 )
 			.attr( "y", chartMargins.top / 2 )
 			.attr( "class", "titles_chart-main" )
-			.text( "Net energy imports drop 35% since 2016" );
+			.text( "U.S. net energy imports drop 35% since 2016" );
 
 		// create main g element container for the chart
 		var chart = g.append( "g" )
@@ -165,7 +165,7 @@ $( document ).ready( function() {
 
 		// X axis: scale + axis function variables
 		var iepX = d3.scaleTime()
-			.domain( d3.extent( exportImportData, function( d ) {
+			.domain( d3.extent( exportImportData, function ( d ) {
 				return parseYear( d.year );
 			} ) )
 			.range( [ -chartMargins.left / 2, iepWidth + ( chartMargins.right / 2 ) ] );
@@ -183,7 +183,7 @@ $( document ).ready( function() {
 			.ticks( 5 ) // specify the scale of the axis
 			.tickSizeInner( iepWidth + chartMargins.left )
 			.tickPadding( 6 )
-			.tickFormat( function( d ) {
+			.tickFormat( function ( d ) {
 				return ( d );
 			} );
 
@@ -200,18 +200,18 @@ $( document ).ready( function() {
 
 		// formula to create lines
 		var line = d3.line()
-			.x( function( d ) {
+			.x( function ( d ) {
 				return iepX( parseYear( d.year ) );
 			} )
-			.y( function( d ) {
+			.y( function ( d ) {
 				return iepY( d.btu );
 			} );
 
 		// map data to individual lines
-		var sourceLines = lineColors.domain().map( function( source ) {
+		var sourceLines = lineColors.domain().map( function ( source ) {
 			return {
 				source: source,
-				values: exportImportData.map( function( s ) {
+				values: exportImportData.map( function ( s ) {
 					return {
 						year: s.year,
 						btu: +s[ source ]
@@ -223,7 +223,7 @@ $( document ).ready( function() {
 		var allSources = [],
 			sourceById = [];
 		// loop through source data to parse sources and IDs (keys) for each source
-		sourceLines.forEach( function( d, i ) {
+		sourceLines.forEach( function ( d, i ) {
 			allSources[ i ] = d.source;
 			sourceById[ d.source ] = i;
 		} );
@@ -264,19 +264,19 @@ $( document ).ready( function() {
 		var linePath = chart.selectAll( ".source" )
 			.append( "path" )
 			.attr( "class", "line" )
-			.attr( "d", function( d ) {
+			.attr( "d", function ( d ) {
 				return line( d.values );
 			} )
-			.style( "stroke-width", function( d ) {
+			.style( "stroke-width", function ( d ) {
 				// assign stroke width based on source value
 				return strokeWidths[ sourceById[ d.source ] ];
 			} )
-			.style( "stroke", function( d ) {
+			.style( "stroke", function ( d ) {
 				return lineColors( d.source );
 			} );
 
 		chart.selectAll( ".line" )
-			.attr( "id", function( d ) {
+			.attr( "id", function ( d ) {
 				return d.source;
 			} )
 			.call( transition ); // call function to animate lines
@@ -294,7 +294,7 @@ $( document ).ready( function() {
 		function dashArray() {
 			var l = this.getTotalLength(),
 				i = d3.interpolateString( "0," + l, l + "," + l );
-			return function( t ) {
+			return function ( t ) {
 				return i( t );
 			};
 		}
@@ -315,28 +315,28 @@ $( document ).ready( function() {
 			.data( sourceLines )
 			.enter().append( "text" )
 			.attr( "class", "line-label" )
-			.datum( function( d ) {
+			.datum( function ( d ) {
 				return {
 					source: d.source,
 					value: d.values[ 0 ]
 				};
 			} )
-			.text( function( d ) {
+			.text( function ( d ) {
 				return d.source;
 			} )
-			.attr( "transform", function( d ) {
+			.attr( "transform", function ( d ) {
 				return "translate(" + ( iepX( parseYear( d.value.year ) ) + 5 ) + "," + ( iepY( d.value.btu ) + 3 ) + ")";
 			} )
-			.style( "fill", function( d ) {
+			.style( "fill", function ( d ) {
 				return lineColors( d.source );
 			} )
-			.style( "font-weight", function( d ) {
+			.style( "font-weight", function ( d ) {
 				// assign font weight based on source value
 				return fontWeights[ sourceById[ d.source ] ];
 			} )
 			.call( wrap, 115, .05 );
 
-		// add markers group
+		/*// add markers group
 		chart.append( "g" )
 			.attr( "id", "markers" );
 
@@ -348,59 +348,49 @@ $( document ).ready( function() {
 			.attr( "class", "dots" );
 
 		// add circle markers for each data point
-		sourceMarkers.style( "fill", function( d ) {
+		sourceMarkers.style( "fill", function ( d ) {
 				return lineColors( d.source );
 			} )
 			.selectAll( ".dots" )
-			.data( function( d ) {
+			.data( function ( d ) {
 				return d.values; // use only each source’s set of values as data
 			} )
 			.enter().append( "circle" )
 			.attr( "class", "dot" )
-			.attr( "cx", function( d, i ) {
+			.attr( "cx", function ( d, i ) {
 				return iepX( parseYear( d.year ) );
 			} )
-			.attr( "cy", function( d, i ) {
+			.attr( "cy", function ( d, i ) {
 				return iepY( d.btu );
 			} )
 			.attr( "r", 6 )
-			.on( "mouseover", function( d ) {
-				console.log( this );
+			.on( "mouseover", function ( d ) {
+				// console.log( this );
 				this.style( "visibility", "visible" )
-			} );
+			} );*/
 
 		// draw/append tooltip container
-		/*var popUpTooltips = g.append( "g" )
-			.attr( "transform", "translate(-100,-100)" )
-			.attr( "class", "tooltip" )
-			.style( "pointer-events", "none" );
-
-		popUpTooltips.append( "circle" )
-			.attr( "class", "tooltip_circle" )
-			.attr( "r", 6 );
-
-		popUpTooltips.append( "text" )
-			.attr( "class", "tooltip_text" )
-			.attr( "y", -25 )
-			.append( "tspan" )
-			.attr( "class", "tooltip_title" )
-			.attr( "dy", -15 );
-
-		popUpTooltips.select( "text" )
-			.append( "tspan" )
-			.attr( "class", "tooltip_data" );*/
-
 		var tooltip = d3.select( "#export-import-prod" )
 			.append( "div" )
 			// .attr( "transform", "translate(-100,-100)" )
 			.attr( "class", "tooltip" )
 			.style( "pointer-events", "none" );
 
-		tooltip.append( "p" )
+		// append container div for text
+		var tooltip_text = tooltip.append( "div" )
+			.attr( "class", "tooltip_text" );
+
+		// append paragraph for year
+		tooltip_text.append( "p" )
 			.attr( "class", "tooltip_title" );
 
-		tooltip.append( "p" )
+		// append paragraph for point value
+		tooltip_text.append( "p" )
 			.attr( "class", "tooltip_data" );
+
+		// append div for pointer/marker
+		tooltip.append( "div" )
+			.attr( "class", "tooltip_marker" );
 
 		/* VORONOI for rollover effects */
 		// create array variable for flattened data
@@ -408,7 +398,7 @@ $( document ).ready( function() {
 		// flatten all data into one array
 		for ( k in sourceLines ) {
 			var k_data = sourceLines[ k ];
-			k_data.values.forEach( function( d ) {
+			k_data.values.forEach( function ( d ) {
 				if ( d.year >= minYr ) flatData.push( {
 					name: k_data.source,
 					year: d.year,
@@ -420,24 +410,24 @@ $( document ).ready( function() {
 
 		// nest flattened data for voronoi
 		var voronoiData = d3.nest()
-			.key( function( d ) {
+			.key( function ( d ) {
 				return iepX( parseYear( d.year ) ) + "," + iepY( d.value );
 			} )
-			.rollup( function( v ) {
+			.rollup( function ( v ) {
 				return v[ 0 ];
 			} )
 			.entries( flatData )
-			.map( function( d ) {
+			.map( function ( d ) {
 				return d.value;
 			} );
-		// console.log( "VORONOI DATA", voronoiData );
+		console.log( "VORONOI DATA", voronoiData );
 
 		// initiate the voronoi function
 		var voronoi = d3.voronoi()
-			.x( function( d ) {
+			.x( function ( d ) {
 				return iepX( parseYear( d.year ) );
 			} )
-			.y( function( d ) {
+			.y( function ( d ) {
 				return iepY( d.value );
 			} )
 			.extent( [ [ -chartMargins.left / 2, -chartMargins.top / 2 ], [ iepWidth + chartMargins.left, iepHeight + chartMargins.top ]
@@ -452,7 +442,7 @@ $( document ).ready( function() {
 			.data( voronoiOutput.polygons() )
 			.enter().append( "path" )
 			.attr( "class", "voronoi_cells" )
-			.attr( "d", function( d ) {
+			.attr( "d", function ( d ) {
 				return d ? "M" + d.join( "L" ) + "Z" : null;
 			} )
 			.on( "mouseover", mouseover );
@@ -466,14 +456,12 @@ $( document ).ready( function() {
 				dotYear = d.data.year,
 				dotSource = d.data.name;
 
-			console.log( dotSource );
-
-			// change background color based on line
-			/*tooltip.style( "background-color", function() {
-				return lineColors( dotSource );
-			} );*/
+			// console.log( "SOURCE:", dotSource, index( lineColors( dotSource ) ) );
 
 			// add content to tooltip text element
+			/*tooltip.select( ".tooltip_text" )
+				.style( "border-color", lineColors( [ dotSource ] - 2 ) );*/
+
 			tooltip.select( ".tooltip_title" )
 				.text( dotYear )
 			/*.style( "color", lineColors( dotSource ) )*/
@@ -482,18 +470,15 @@ $( document ).ready( function() {
 			tooltip.select( ".tooltip_data" )
 				.text( dotBtu + " " + yUnitsAbbr );
 
-			//Change position of circle and text of tooltip
+			tooltip.select( ".tooltip_marker" )
+				.text( "▼" )
+			/*.style( "color", lineColors( dotSource ) )*/
+			;
+
+			//Change position of tooltip and text of tooltip
 			tooltip.style( "visibility", "visible" )
 				.style( "left", dotX + ( chartMargins.left / 2 ) + "px" )
-				.style( "top", dotY + chartMargins.top + "px" );
-
-			// popUpTooltips.attr( "transform", "translate(" + ( dotX + chartMargins.left ) + "," + ( dotY + chartMargins.top ) + ")" )
-			// .select( ".tooltipCircle" )
-			// 	.data( sourceLines )
-			// 	.style( "fill", lineColors( d.source ) );
-
-			// .attr( "transform", "translate(" + ( dotX + chartMargins.left ) + "," + ( dotY + chartMargins.top ) + ")" )
-			// .text( dotSource + "<br/>" + dotYear + "<br/>" + d3.format( ".1f" )( dotBtu ) );
+				.style( "top", dotY + ( chartMargins.top / 2 ) + "px" );
 		} //mouseover
 
 		/****
@@ -505,7 +490,7 @@ $( document ).ready( function() {
 			whCapAll = []; // all cap data
 
 		// loop through each row of windHydroCapData
-		windHydroCapData.forEach( function( d, i ) {
+		windHydroCapData.forEach( function ( d, i ) {
 			// add all wind cap data to one array
 			windCap[ i ] = d[ "Wind Net Summer Capacity (megawatts)" ]
 			// add all wind cap data to one array
@@ -520,7 +505,7 @@ $( document ).ready( function() {
 		whCapAll = windCap.concat( hydroCap );
 
 		// assign chart colors to column name
-		lineColors.domain( d3.keys( windHydroCapData[ 0 ] ).filter( function( key ) {
+		lineColors.domain( d3.keys( windHydroCapData[ 0 ] ).filter( function ( key ) {
 			return key !== "year";
 		} ) );
 
@@ -550,7 +535,7 @@ $( document ).ready( function() {
 
 		// X axis: scale + axis function variables
 		var windX = d3.scaleTime()
-			.domain( d3.extent( windHydroCapData, function( d ) {
+			.domain( d3.extent( windHydroCapData, function ( d ) {
 				return parseYear( d.year );
 			} ) )
 			.range( [ 0, windWidth ] ),
@@ -563,7 +548,7 @@ $( document ).ready( function() {
 			yAxis = d3.axisRight( windY )
 			.tickSizeInner( windWidth + chartMargins.left )
 			.tickPadding( 6 )
-			.tickFormat( function( d ) {
+			.tickFormat( function ( d ) {
 				return ( d / 1000 + "k" );
 			} );
 
@@ -580,19 +565,19 @@ $( document ).ready( function() {
 
 		// create wind capacity line
 		var windLine = d3.line()
-			.x( function( d ) {
+			.x( function ( d ) {
 				return windX( parseYear( d.year ) );
 			} )
-			.y( function( d ) {
+			.y( function ( d ) {
 				return windY( d[ "Wind Net Summer Capacity (megawatts)" ] );
 			} );
 
 		// create hydro capacity line
 		var hydroLine = d3.line()
-			.x( function( d ) {
+			.x( function ( d ) {
 				return windX( parseYear( d.year ) );
 			} )
-			.y( function( d ) {
+			.y( function ( d ) {
 				return windY( d[ "Conventional Hydroelectric Net Summer Capacity (megawatts)" ] );
 			} );
 
@@ -622,7 +607,7 @@ $( document ).ready( function() {
 			.append( "path" )
 			.datum( windHydroCapData )
 			.attr( "d", windLine )
-			.style( "stroke", function( d ) {
+			.style( "stroke", function ( d ) {
 				return lineColors( "Wind Net Summer Capacity (megawatts)" );
 			} );
 
@@ -632,7 +617,7 @@ $( document ).ready( function() {
 			.append( "path" )
 			.datum( windHydroCapData )
 			.attr( "d", hydroLine )
-			.style( "stroke", function( d ) {
+			.style( "stroke", function ( d ) {
 				return lineColors( "Conventional Hydroelectric Net Summer Capacity (megawatts)" );
 			} );
 
@@ -645,7 +630,7 @@ $( document ).ready( function() {
 			whGenAll = []; // all gen data
 
 		// loop through each row of windHydroCapData
-		windHydroGenData.forEach( function( d, i ) {
+		windHydroGenData.forEach( function ( d, i ) {
 			// add all wind cap data to one array
 			windGen[ i ] = d[ "Net wind generation (thousand megawatthours)" ]
 			// add all wind cap data to one array
@@ -660,9 +645,10 @@ $( document ).ready( function() {
 		whGenAll = windGen.concat( hydroGen );
 
 		// assign chart colors to column name
-		lineColors.domain( d3.keys( windHydroGenData[ 0 ] ).filter( function( key ) {
+		lineColors.domain( d3.keys( windHydroGenData[ 0 ] ).filter( function ( key ) {
 			return key !== "year";
-		} ) )
+		} ) );
+
 		/*		var windGen = [],
 					hydroGen = [];
 
@@ -676,11 +662,6 @@ $( document ).ready( function() {
 					// add all wind gen data to one array
 					windGen.push( windHydroGenData[ w ][ "Net wind generation (thousand megawatthours)" ] )
 				}*/
-
-		// assign chart colors to column name
-		lineColors.domain( d3.keys( windHydroCapData[ 0 ] ).filter( function( key ) {
-			return key !== "year";
-		} ) )
 
 		// get chart container dimensions + set universal margins
 		var contWidth = $( "#wind-over-hydro-gen" ).width(),
@@ -708,7 +689,7 @@ $( document ).ready( function() {
 
 		// X axis: scale + axis function variables
 		var windX = d3.scaleTime()
-			.domain( d3.extent( windHydroGenData, function( d ) {
+			.domain( d3.extent( windHydroGenData, function ( d ) {
 				return parseYear( d.year );
 			} ) )
 			.range( [ 0, windWidth ] ),
@@ -721,7 +702,7 @@ $( document ).ready( function() {
 			yAxis = d3.axisRight( windY )
 			.tickSizeInner( windWidth + chartMargins.left )
 			.tickPadding( 6 )
-			.tickFormat( function( d ) {
+			.tickFormat( function ( d ) {
 				return ( d / 1000 + "k" );
 			} );
 
@@ -738,22 +719,22 @@ $( document ).ready( function() {
 
 		// create wind capacity line
 		var windLine = d3.line()
-			.x( function( d ) {
+			.x( function ( d ) {
 				// console.log( parseYear( d.year ) );
 				return windX( parseYear( d.year ) );
 			} )
-			.y( function( d ) {
+			.y( function ( d ) {
 				// console.log( d[ "Net wind generation (thousand megawatthours)" ] );
 				return windY( d[ "Net wind generation (thousand megawatthours)" ] );
 			} );
 
 		// create hydro capacity line
 		var hydroLine = d3.line()
-			.x( function( d ) {
+			.x( function ( d ) {
 				// console.log( parseYear( d.year ) );
 				return windX( parseYear( d.year ) );
 			} )
-			.y( function( d ) {
+			.y( function ( d ) {
 				// console.log( d[ "Net conventional hydroelectric generation (thousand megawatthours)" ] );
 				return windY( d[ "Net conventional hydroelectric generation (thousand megawatthours)" ] );
 			} );
@@ -785,7 +766,7 @@ $( document ).ready( function() {
 			.datum( windHydroGenData )
 			.attr( "d", windLine )
 			.attr( "class", "line-green" )
-			.style( "stroke", function( d ) {
+			.style( "stroke", function ( d ) {
 				return lineColors( "Wind Net Summer Capacity (megawatts)" );
 			} );
 
@@ -795,7 +776,7 @@ $( document ).ready( function() {
 			.append( "path" )
 			.datum( windHydroGenData )
 			.attr( "d", hydroLine )
-			.style( "stroke", function( d ) {
+			.style( "stroke", function ( d ) {
 				return lineColors( "Conventional Hydroelectric Net Summer Capacity (megawatts)" );
 			} );
 
@@ -894,7 +875,7 @@ $( document ).ready( function() {
 
 	// function for wrapping long SVG text
 	function wrap( text, width, yheight ) {
-		text.each( function() {
+		text.each( function () {
 			var text = d3.select( this ),
 				words = text.text().split( /\s+/ ).reverse(),
 				word,
@@ -917,7 +898,7 @@ $( document ).ready( function() {
 					line = [ word ];
 					tspan = text.append( "tspan" ).attr( "x", 0 ).attr( "y", y ).attr( "dy", dy + ( lineHeight * ++lineNumber ) + "em" ).text( word );
 					// console.log( dy + ( lineHeight * lineNumber ) );
-					console.log( tspan );
+					// console.log( tspan );
 				}
 			}
 		} );
