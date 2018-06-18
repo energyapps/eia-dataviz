@@ -20,7 +20,7 @@ D3 charts
 
 .container_chart {
 	height: 100%;
-	min-height: 60%;
+	min-height: 80%;
 	width: 100%;
 }
 
@@ -43,9 +43,13 @@ path {
 }
 
 .titles_chart-main {
-	font-size: 1.2em;
-	/*text-anchor: middle;*/
-	/*text-decoration: underline;*/
+	font-size: 1.1em;
+	font-weight: bold;
+}
+
+.titles_chart-summary {
+	font-size: 0.85em;
+	font-weight: lighter;
 }
 
 .titles_axis-y {
@@ -97,6 +101,35 @@ path {
 	display: block;
 	font-size: 1em;
 	margin-top: -0.45em;
+}
+
+.container_source {
+	background-color: rgb(225, 225, 225);
+	color: #000;
+	font-family: "Avenir LT W02 35 Light", verdana, sans-serif;
+	font-size: .65em;
+	margin: 1em 2em 2em;
+	max-width: 60%;
+	padding: 1em;
+	width: auto;
+}
+
+.container_source h5,
+.container_source p {
+	display: inline-block;
+}
+
+.container_source h5 {
+	font-weight: bold;
+}
+
+.container_source p {
+	line-height: 1.2;
+	margin-bottom: 0;
+}
+
+.container_source h5:after {
+	content: "\2002";
 }
 
 .line {

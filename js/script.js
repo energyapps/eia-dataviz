@@ -67,16 +67,15 @@ $( document ).ready( function () {
 
 		// create a variable to parse year with D3
 		var parseYear = d3.timeParse( "%Y" );
-
 		console.log( "Spreadsheet data is loaded on", today.toJSON() );
 
 		/****
 		 LOAD DATA INTO VARIABLES
 		****/
 		// load individual sheet elements into variables
-		var windHydroCapData = data.wind_over_hydro_cap.elements,
-			windHydroGenData = data.wind_over_hydro_gen.elements,
-			exportImportData = data.all_exports_ng_exports_net_imports.elements;
+		var exportImportData = data.all_exports_ng_exports_net_imports.elements;
+		/*windHydroCapData = data.wind_over_hydro_cap.elements,
+		windHydroGenData = data.wind_over_hydro_gen.elements,*/
 		// console.table( exportImportData );
 
 		// create universal color scale
@@ -91,7 +90,7 @@ $( document ).ready( function () {
 
 		// set units for Y axis values
 		var yUnits = "Quadrillion Btu",
-			yUnitsAbbr = "Quad Btu";
+			yUnitsAbbr = "quads";
 
 		// declare arrays for separate data
 		var primaryExports = [], // primary energy exports data
@@ -127,13 +126,13 @@ $( document ).ready( function () {
 			return key !== "year" && key !== "Natural Gas Exports";
 		} ) );
 
-		// get chart container dimensions + set universal margins
+		// get chart container dimensions
 		var contWidth = $( "#export-import-prod" ).width(),
 			contHeight = $( "#export-import-prod" ).height();
 
 		// select container div + create SVG and main g elements within
 		var impExpProd = d3.select( "#export-import-prod" ),
-			iepWidth = contWidth * 0.65,
+			iepWidth = contWidth * 0.75,
 			iepHeight = 0 + ( chartMargins.top + chartMargins.bottom ) * 2,
 			// create SVG viewport
 			g = impExpProd.append( "svg:svg" )
@@ -147,20 +146,29 @@ $( document ).ready( function () {
 			.attr( "id", "lines-clip" )
 			.append( "rect" )
 			.attr( "width", iepWidth + chartMargins.left )
-			.attr( "height", iepHeight + chartMargins.top )
+			.attr( "height", iepHeight + ( chartMargins.bottom * 4 ) )
 			.attr( "x", -chartMargins.left / 2 )
 			.attr( "y", -chartMargins.top / 2 );
 
-		// append chart title
-		g.append( "svg:text" )
-			.attr( "x", chartMargins.left / 3 )
+		// append g element container for intro text
+		var chartIntro = g.append( "svg:g" )
+			.attr( "class", "chart-intro" );
+
+		// append chart title to intro group
+		chartIntro.append( "svg:text" )
 			.attr( "y", chartMargins.top / 2 )
 			.attr( "class", "titles_chart-main" )
 			.text( "U.S. net energy imports drop 35% since 2016" );
 
-		// create main g element container for the chart
-		var chart = g.append( "g" )
-			.attr( "transform", "translate(" + chartMargins.left + "," + chartMargins.top + ")" )
+		// append chart summary to intro group
+		chartIntro.append( "svg:text" )
+			.attr( "class", "titles_chart-summary" )
+			.text( "Total net energy imports to the United States fell to 7.3 quadrillion British thermal units (quads) in 2017, the lowest level since 1982. Overall, net energy imports have been trending lower from a high of 30.20 quads in 2005." )
+			.call( wrap, iepWidth, 4, 1.5 );
+
+		// append main g element container for the chart
+		var chart = g.append( "svg:g" )
+			.attr( "transform", "translate(" + chartMargins.left + "," + ( chartMargins.top * 1.65 ) + ")" )
 			.attr( "class", "chart-wrapper" );
 
 		// X axis: scale + axis function variables
@@ -196,7 +204,7 @@ $( document ).ready( function () {
 			chart.attr( "text-anchor", "end" );
 			chart.selectAll( ".tick:not(:first-of-type) line" ).attr( "stroke", "#777" ).attr( "stroke-dasharray", "2,2" );
 			chart.selectAll( ".tick text" ).attr( "x", -4 ).attr( "dy", 0 );
-		}
+		} // appends y-axis to chart group
 
 		// formula to create lines
 		var line = d3.line()
@@ -334,7 +342,7 @@ $( document ).ready( function () {
 				// assign font weight based on source value
 				return fontWeights[ sourceById[ d.source ] ];
 			} )
-			.call( wrap, 115, .05 );
+			.call( wrap, 115, .05, 1.1 );
 
 		/*// add markers group
 		chart.append( "g" )
@@ -420,7 +428,7 @@ $( document ).ready( function () {
 			.map( function ( d ) {
 				return d.value;
 			} );
-		console.log( "VORONOI DATA", voronoiData );
+		// console.log( "VORONOI DATA", voronoiData );
 
 		// initiate the voronoi function
 		var voronoi = d3.voronoi()
@@ -445,7 +453,8 @@ $( document ).ready( function () {
 			.attr( "d", function ( d ) {
 				return d ? "M" + d.join( "L" ) + "Z" : null;
 			} )
-			.on( "mouseover", mouseover );
+			.on( "mouseover", mouseover )
+			.on( "mouseout", mouseout );
 
 		// add mouseover action for tooltip
 		function mouseover( d ) {
@@ -480,6 +489,25 @@ $( document ).ready( function () {
 				.style( "left", dotX + ( chartMargins.left / 2 ) + "px" )
 				.style( "top", dotY + ( chartMargins.top / 2 ) + "px" );
 		} //mouseover
+
+		function mouseout() {
+			tooltip.style( "visibility", "hidden" );
+		}
+
+		// draw/append tooltip container
+		var sources = d3.select( "#chart-sources" );
+
+		sources.append( "h5" )
+			.text( "SOURCE: " );
+
+		sources.append( "p" )
+			.attr( "class", "source-content" );
+
+		sources.select( ".source-content" )
+			.text( "U.S. Energy Information Administration (EIA), " )
+			.append( "a" )
+			.attr( "href", "http://www.eia.gov/totalenergy/data/monthly/" )
+			.text( "Monthly Energy Review, tables 1.4a & 1.4b" );
 
 		/****
 		 CHART #2: Wind vs. Hydro Net Summer Capacity
@@ -874,20 +902,19 @@ $( document ).ready( function () {
 	}
 
 	// function for wrapping long SVG text
-	function wrap( text, width, yheight ) {
+	function wrap( text, width, yheight, lineheight ) {
 		text.each( function () {
 			var text = d3.select( this ),
 				words = text.text().split( /\s+/ ).reverse(),
 				word,
 				line = [],
 				lineNumber = 0,
-				lineHeight = 1.1, // ems
+				lineHeight = /*1.1*/ lineheight, // ems
 				y = 0 /*text.attr( "y" )*/ ,
 				dy = parseFloat( yheight ),
 				tspan = text.text( null ).append( "tspan" ).attr( "x", 0 ).attr( "y", y ).attr( "dy", dy + "em" );
 			while ( word = words.pop() ) {
 				line.push( word );
-
 				// console.log( "wrap", line, y, yheight );
 				tspan.text( line.join( " " ) );
 				// console.log( line, "comp text length", tspan.node().getComputedTextLength(), width );
