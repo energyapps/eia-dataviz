@@ -145,7 +145,7 @@ $( document ).ready( function () {
 			.append( "clipPath" )
 			.attr( "id", "lines-clip" )
 			.append( "rect" )
-			.attr( "width", iepWidth + chartMargins.left )
+			.attr( "width", iepWidth + ( chartMargins.left * 2 ) )
 			.attr( "height", iepHeight + ( chartMargins.bottom * 4 ) )
 			.attr( "x", -chartMargins.left / 2 )
 			.attr( "y", -chartMargins.top / 2 );
@@ -158,12 +158,12 @@ $( document ).ready( function () {
 		chartIntro.append( "svg:text" )
 			.attr( "y", chartMargins.top / 2 )
 			.attr( "class", "titles_chart-main" )
-			.text( "U.S. net energy imports drop 35% since 2016" );
+			.text( "	U.S. energy exports on the rise while energy imports fall" );
 
 		// append chart summary to intro group
 		chartIntro.append( "svg:text" )
 			.attr( "class", "titles_chart-summary" )
-			.text( "Total net energy imports to the United States fell to 7.3 quadrillion British thermal units (quads) in 2017, the lowest level since 1982. Overall, net energy imports have been trending lower from a high of 30.20 quads in 2005." )
+			.text( "Net energy imports to the United States fell 35% while the gross energy exports improved by 27% since 2016." )
 			.call( wrap, iepWidth, 4, 1.5 );
 
 		// append main g element container for the chart
