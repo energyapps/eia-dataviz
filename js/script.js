@@ -18,7 +18,7 @@ $( document ).ready( function () {
 		currMonth = today.getMonth();
 
 	if ( 2 < currMonth < 9 ) {
-		console.log( "it's summer", currMonth, currYear );
+		console.log( "It’s summer", currMonth, currYear );
 	}
 
 	// set universal chart margins
@@ -68,7 +68,7 @@ $( document ).ready( function () {
 		// create a variable to parse year with D3
 		var parseYear = d3.timeParse( "%Y" );
 
-		console.log( "Spreadsheet data is loaded.", today.toJSON() );
+		console.log( "Spreadsheet data is loaded on", today.toJSON() );
 
 		/****
 		 LOAD DATA INTO VARIABLES
@@ -336,7 +336,7 @@ $( document ).ready( function () {
 			} )
 			.call( wrap, 115, .05 );
 
-		// add markers group
+		/*// add markers group
 		chart.append( "g" )
 			.attr( "id", "markers" );
 
@@ -365,42 +365,32 @@ $( document ).ready( function () {
 			} )
 			.attr( "r", 6 )
 			.on( "mouseover", function ( d ) {
-				console.log( this );
+				// console.log( this );
 				this.style( "visibility", "visible" )
-			} );
+			} );*/
 
 		// draw/append tooltip container
-		/*var popUpTooltips = g.append( "g" )
-			.attr( "transform", "translate(-100,-100)" )
-			.attr( "class", "tooltip" )
-			.style( "pointer-events", "none" );
-
-		popUpTooltips.append( "circle" )
-			.attr( "class", "tooltip_circle" )
-			.attr( "r", 6 );
-
-		popUpTooltips.append( "text" )
-			.attr( "class", "tooltip_text" )
-			.attr( "y", -25 )
-			.append( "tspan" )
-			.attr( "class", "tooltip_title" )
-			.attr( "dy", -15 );
-
-		popUpTooltips.select( "text" )
-			.append( "tspan" )
-			.attr( "class", "tooltip_data" );*/
-
 		var tooltip = d3.select( "#export-import-prod" )
 			.append( "div" )
 			// .attr( "transform", "translate(-100,-100)" )
 			.attr( "class", "tooltip" )
 			.style( "pointer-events", "none" );
 
-		tooltip.append( "p" )
+		// append container div for text
+		var tooltip_text = tooltip.append( "div" )
+			.attr( "class", "tooltip_text" );
+
+		// append paragraph for year
+		tooltip_text.append( "p" )
 			.attr( "class", "tooltip_title" );
 
-		tooltip.append( "p" )
+		// append paragraph for point value
+		tooltip_text.append( "p" )
 			.attr( "class", "tooltip_data" );
+
+		// append div for pointer/marker
+		tooltip.append( "div" )
+			.attr( "class", "tooltip_marker" );
 
 		/* VORONOI for rollover effects */
 		// create array variable for flattened data
@@ -430,7 +420,7 @@ $( document ).ready( function () {
 			.map( function ( d ) {
 				return d.value;
 			} );
-		// console.log( "VORONOI DATA", voronoiData );
+		console.log( "VORONOI DATA", voronoiData );
 
 		// initiate the voronoi function
 		var voronoi = d3.voronoi()
@@ -466,14 +456,12 @@ $( document ).ready( function () {
 				dotYear = d.data.year,
 				dotSource = d.data.name;
 
-			console.log( dotSource );
-
-			// change background color based on line
-			/*tooltip.style( "background-color", function() {
-				return lineColors( dotSource );
-			} );*/
+			// console.log( "SOURCE:", dotSource, index( lineColors( dotSource ) ) );
 
 			// add content to tooltip text element
+			/*tooltip.select( ".tooltip_text" )
+				.style( "border-color", lineColors( [ dotSource ] - 2 ) );*/
+
 			tooltip.select( ".tooltip_title" )
 				.text( dotYear )
 			/*.style( "color", lineColors( dotSource ) )*/
@@ -482,18 +470,15 @@ $( document ).ready( function () {
 			tooltip.select( ".tooltip_data" )
 				.text( dotBtu + " " + yUnitsAbbr );
 
-			//Change position of circle and text of tooltip
+			tooltip.select( ".tooltip_marker" )
+				.text( "▼" )
+			/*.style( "color", lineColors( dotSource ) )*/
+			;
+
+			//Change position of tooltip and text of tooltip
 			tooltip.style( "visibility", "visible" )
 				.style( "left", dotX + ( chartMargins.left / 2 ) + "px" )
-				.style( "top", dotY + chartMargins.top + "px" );
-
-			// popUpTooltips.attr( "transform", "translate(" + ( dotX + chartMargins.left ) + "," + ( dotY + chartMargins.top ) + ")" )
-			// .select( ".tooltipCircle" )
-			// 	.data( sourceLines )
-			// 	.style( "fill", lineColors( d.source ) );
-
-			// .attr( "transform", "translate(" + ( dotX + chartMargins.left ) + "," + ( dotY + chartMargins.top ) + ")" )
-			// .text( dotSource + "<br/>" + dotYear + "<br/>" + d3.format( ".1f" )( dotBtu ) );
+				.style( "top", dotY + ( chartMargins.top / 2 ) + "px" );
 		} //mouseover
 
 		/****
@@ -664,9 +649,6 @@ $( document ).ready( function () {
 			return key !== "year";
 		} ) );
 
-		console.log( lineColors.domain( d3.keys( windHydroGenData[ 0 ] ).filter( function ( key ) {
-			return key !== "year";
-		} ) ) );
 		/*		var windGen = [],
 					hydroGen = [];
 
