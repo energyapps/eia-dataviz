@@ -44,7 +44,7 @@ $( document ).ready( function () {
 		Tabletop.init( {
 			key: public_spreadsheet_url,
 			callback: showInfo,
-			wanted: [ "wind_over_hydro_cap", "wind_over_hydro_gen", "all_exports_ng_exports_net_imports", "monthly_fuel_price", "annual_summer_fuel_avg", "monthly_disp_income", "summer_disp_income" ], // specify sheets to load
+			wanted: [ "all_exports_ng_exports_net_imports" /*, "wind_over_hydro_cap", "wind_over_hydro_gen", "monthly_fuel_price", "annual_summer_fuel_avg", "monthly_disp_income", "summer_disp_income"*/ ], // specify sheets to load
 			parseNumbers: true,
 			orderby: "year",
 			reverse: true,
