@@ -600,12 +600,6 @@ $( window ).on( "load", function () {
 		/*pymChild = new pym.Child( {
 			renderCallback: showInfo
 		} );*/
-		/*d3.csv( graphic_data_url, function ( error, data ) {
-			graphic_data = data;
-			graphic_data.forEach( function ( d ) {
-				d.date = d3.time.format( '%Y-%m' ).parse( d.date );
-				d.jobs = d.jobs / 1000;
-			} );*/
 	} else { // If not, rely on static fallback image. No callback needed.
 		// pymChild = new pym.Child( {} );
 		console.log( "This browser doesn't support SVG" );
