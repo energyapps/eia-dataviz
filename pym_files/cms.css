@@ -1,15 +1,21 @@
 #graphic {
-	width: 100%;
+  width: 100%;
+}
+
+iframe {
+  height: 100%;
 }
 
 /*fallback*/
 .fallback {
+  display: none;
+}
+
+@media screen and (-ms-high-contrast: active),
+(-ms-high-contrast: none) {
+  #graphic {
     display: none;
   }
-
-
-@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {  
-   #graphic {display: none;}  
   .fallback img {
     display: block;
   }

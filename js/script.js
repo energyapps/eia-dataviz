@@ -1,6 +1,6 @@
 /* DEFINE PYM VARIABLE */
 // declare pym content variable for later use
-// var pymChild = null;
+var pymChild = null;
 
 /* DEFINE DATA SOURCES */
 // Google sheets ID – for loading with Tabletop.JS
@@ -561,10 +561,9 @@ function wrap( text, width, yheight, lineheight ) {
 	} );
 
 	// This is calling an updated height.
-	/*if ( pymChild ) {
+	if ( pymChild ) {
 		pymChild.sendHeight();
-		pymChild.sendWidth();
-	}*/
+	}
 }
 
 // } );
@@ -597,11 +596,11 @@ $( window ).on( "load", function () {
 		loadSpreadsheet();
 
 		// Instantiate the child message with a callback but AFTER the D3 charts are drawn.
-		/*pymChild = new pym.Child( {
+		pymChild = new pym.Child( {
 			renderCallback: showInfo
-		} );*/
+		} );
 	} else { // If not, rely on static fallback image. No callback needed.
-		// pymChild = new pym.Child( {} );
+		pymChild = new pym.Child( {} );
 		console.log( "This browser doesn't support SVG" );
 	}
 } );
